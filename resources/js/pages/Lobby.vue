@@ -66,10 +66,16 @@ const settingsForm = useForm({
     },
 });
 
-const copyCode = () => {
-    navigator.clipboard.writeText(props.lobby.code);
-    copiedCode.value = true;
-    setTimeout(() => (copiedCode.value = false), 2000);
+const lobbyLink = `https://impostor.its-eddy.com/lobby/${props.lobby.code}`;
+
+const copyCode = async () => {
+    try {
+        await navigator.clipboard.writeText(lobbyLink);
+        copiedCode.value = true;
+        setTimeout(() => (copiedCode.value = false), 2000);
+    } catch {
+        copiedCode.value = false;
+    }
 };
 
 const startGame = () => {
@@ -165,7 +171,7 @@ const getDifficultyColor = (level: number) => {
                     </div>
                     <p v-if="copiedCode" class="animate-fade-in flex items-center gap-1 text-sm text-green-400">
                         <Check class="h-4 w-4" />
-                        Code copied to clipboard!
+                        Link copied to clipboard!
                     </p>
                 </div>
 
