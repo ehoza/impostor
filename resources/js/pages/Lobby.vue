@@ -20,7 +20,10 @@ import {
     AlertCircle,
     Save,
     X,
+    LogIn,
+    ArrowRight,
 } from 'lucide-vue-next';
+import { Link } from '@inertiajs/vue3';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { play, start, state } from '@/routes/game';
 import { leave, settings } from '@/routes/lobby';
@@ -64,6 +67,10 @@ const settingsForm = useForm({
         voting_time: props.lobby?.settings.voting_time ?? 30,
         word_difficulty: props.lobby?.settings.word_difficulty ?? 3,
     },
+});
+
+const joinForm = useForm({
+    player_name: '',
 });
 
 const lobbyLink = `https://impostor.its-eddy.com/lobby/${props.lobby.code}`;
@@ -110,7 +117,9 @@ const pollLobby = async () => {
 };
 
 onMounted(() => {
-    polling.value = window.setInterval(pollLobby, 2000);
+    if (props.current_player) {
+        polling.value = window.setInterval(pollLobby, 2000);
+    }
 });
 
 onUnmounted(() => {
@@ -134,6 +143,91 @@ const getDifficultyColor = (level: number) => {
     <Head :title="`Lobby ${lobby.code}`" />
 
     <div class="relative min-h-screen overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-4 md:p-6">
+        <!-- Join overlay when visiting lobby link directly without being in lobby -->
+        <div
+            v-if="!current_player"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/95 p-4 backdrop-blur-sm"
+        >
+            <div class="glass-card w-full max-w-md animate-fade-in-scale rounded-3xl p-6">
+                <template v-if="lobby.status === 'waiting'">
+                    <div class="mb-6 flex items-center gap-3">
+                        <div
+                            class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg"
+                        >
+                            <LogIn class="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Join Lobby</h2>
+                            <p class="text-sm text-gray-400">{{ lobby.name || `Lobby ${lobby.code}` }}</p>
+                        </div>
+                    </div>
+                    <form
+                        @submit.prevent="joinForm.post(`/lobby/join/${lobby.code}`, { preserveScroll: true })"
+                        class="space-y-5"
+                    >
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-gray-300">
+                                <span class="flex items-center gap-2">
+                                    <User class="h-4 w-4 text-blue-400" />
+                                    Your Name
+                                </span>
+                            </label>
+                            <input
+                                v-model="joinForm.player_name"
+                                type="text"
+                                required
+                                maxlength="30"
+                                class="input-field input-field-blue w-full rounded-xl py-4 px-4 text-white placeholder-gray-500"
+                                placeholder="Enter your name"
+                            />
+                            <p v-if="joinForm.errors.player_name" class="mt-1.5 text-sm text-red-400">
+                                {{ joinForm.errors.player_name }}
+                            </p>
+                            <p v-if="joinForm.errors.code" class="mt-1.5 text-sm text-red-400">
+                                {{ joinForm.errors.code }}
+                            </p>
+                        </div>
+                        <button
+                            type="submit"
+                            :disabled="joinForm.processing"
+                            class="btn-secondary flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold text-white"
+                        >
+                            <template v-if="joinForm.processing">
+                                <div class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                                Joining...
+                            </template>
+                            <template v-else>
+                                <LogIn class="h-5 w-5" />
+                                Join & Connect
+                                <ArrowRight class="h-5 w-5" />
+                            </template>
+                        </button>
+                    </form>
+                </template>
+                <template v-else>
+                    <div class="flex flex-col items-center gap-4 py-4 text-center">
+                        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/20">
+                            <AlertCircle class="h-8 w-8 text-amber-400" />
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-white">
+                                {{ lobby.status === 'playing' ? 'Game in progress' : 'Game ended' }}
+                            </h2>
+                            <p class="mt-1 text-gray-400">
+                                {{ lobby.status === 'playing' ? 'This game has already started.' : 'This lobby has finished.' }}
+                            </p>
+                        </div>
+                        <Link
+                            href="/"
+                            class="btn-glass flex items-center gap-2 rounded-xl px-6 py-3 font-medium text-white"
+                        >
+                            <ArrowRight class="h-5 w-5 rotate-180" />
+                            Back to Home
+                        </Link>
+                    </div>
+                </template>
+            </div>
+        </div>
         <!-- Background -->
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
             <div class="bg-grid-pattern absolute inset-0 opacity-20"></div>
