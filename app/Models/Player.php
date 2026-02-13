@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Player extends Model
 {
@@ -48,12 +50,12 @@ class Player extends Model
         ];
     }
 
-    public function lobby()
+    public function lobby(): BelongsTo
     {
         return $this->belongsTo(Lobby::class);
     }
 
-    public function word()
+    public function word(): BelongsTo
     {
         return $this->belongsTo(Word::class);
     }
@@ -63,17 +65,12 @@ class Player extends Model
         return $query->where('is_eliminated', false);
     }
 
-    public function scopeNotEliminated($query)
-    {
-        return $query->where('is_eliminated', false);
-    }
-
-    public function sentMessages()
+    public function sentMessages(): HasMany
     {
         return $this->hasMany(Message::class, 'sender_id');
     }
 
-    public function receivedMessages()
+    public function receivedMessages(): HasMany
     {
         return $this->hasMany(Message::class, 'recipient_id');
     }

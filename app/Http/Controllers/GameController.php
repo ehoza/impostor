@@ -240,6 +240,8 @@ class GameController extends Controller
             'turn_started_at' => now(),
             'vote_now_votes' => [],
             'reroll_votes' => [],
+            'voting_phase' => false,
+            'last_eliminated_snapshot' => null,
             'current_round' => 1,
         ]);
 
@@ -293,6 +295,7 @@ class GameController extends Controller
         $voteKey = "lobby_{$lobby->id}_votes";
         $eliminationVotes = Cache::get($voteKey, []);
         $eliminationVoteHasVoted = isset($eliminationVotes[$currentPlayerId]);
+        $eliminationVotedPlayerIds = array_keys($eliminationVotes);
 
         return response()->json([
             'status' => $lobby->status,
@@ -308,6 +311,8 @@ class GameController extends Controller
             'current_round' => $lobby->current_round,
             'impostor_wins' => $lobby->impostor_wins,
             'crew_wins' => $lobby->crew_wins,
+            'voting_phase' => (bool) ($lobby->voting_phase ?? false),
+            'last_eliminated' => $lobby->last_eliminated_snapshot,
             'vote_now' => [
                 'count' => $voteNowCount,
                 'threshold' => $voteNowThreshold,
@@ -321,6 +326,7 @@ class GameController extends Controller
                 'has_voted' => in_array($currentPlayerId, $lobby->reroll_votes ?? []),
             ],
             'elimination_vote_has_voted' => $eliminationVoteHasVoted,
+            'elimination_voted_player_ids' => $eliminationVotedPlayerIds,
         ]);
     }
 
@@ -404,6 +410,13 @@ class GameController extends Controller
         }
 
         $eliminatedPlayer->update(['is_eliminated' => true]);
+        $lobby->update([
+            'last_eliminated_snapshot' => [
+                'id' => $eliminatedPlayer->id,
+                'name' => $eliminatedPlayer->name,
+                'is_impostor' => $eliminatedPlayer->is_impostor,
+            ],
+        ]);
 
         $impostorsRemaining = $lobby->players()->where('is_impostor', true)->where('is_eliminated', false)->count();
         $crewRemaining = $lobby->players()->where('is_impostor', false)->where('is_eliminated', false)->count();
@@ -474,6 +487,7 @@ class GameController extends Controller
         $lobby->update([
             'vote_now_votes' => [],
             'reroll_votes' => [],
+            'voting_phase' => false,
         ]);
         $lobby->players()->update([
             'has_voted_vote_now' => false,
@@ -520,6 +534,8 @@ class GameController extends Controller
             'turn_started_at' => now(),
             'vote_now_votes' => [],
             'reroll_votes' => [],
+            'voting_phase' => false,
+            'last_eliminated_snapshot' => null,
             'current_round' => $lobby->current_round + 1,
         ]);
 
@@ -717,6 +733,10 @@ class GameController extends Controller
 
         if ($activated) {
             Cache::forget("lobby_{$lobby->id}_votes");
+            $lobby->update([
+                'voting_phase' => true,
+                'last_eliminated_snapshot' => null,
+            ]);
         }
 
         broadcast(new \App\Events\VoteNowUpdated($lobby, count($voteNowVotes), $threshold, $activated));
@@ -851,6 +871,7 @@ class GameController extends Controller
             'current_turn_player_id' => $turnOrder[$nextIndex],
             'turn_started_at' => now(),
             'current_round' => $newRound,
+            'last_eliminated_snapshot' => null,
         ]);
 
         broadcast(new \App\Events\TurnAdvanced($lobby, $turnOrder[$nextIndex], $nextIndex, $newRound));

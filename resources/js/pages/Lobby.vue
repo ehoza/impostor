@@ -73,11 +73,24 @@ const joinForm = useForm({
     player_name: '',
 });
 
-const lobbyLink = `https://impostor.its-eddy.com/lobby/${props.lobby.code}`;
+const lobbyLink = `${window.location.origin}/lobby/${props.lobby.code}`;
 
 const copyCode = async () => {
+    const text = lobbyLink;
     try {
-        await navigator.clipboard.writeText(lobbyLink);
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        }
         copiedCode.value = true;
         setTimeout(() => (copiedCode.value = false), 2000);
     } catch {
@@ -116,9 +129,17 @@ const pollLobby = async () => {
     }
 };
 
+const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible' && props.current_player) {
+        pollLobby();
+    }
+};
+
 onMounted(() => {
     if (props.current_player) {
+        pollLobby(); // Run immediately so multi-tab or slow load still redirects when game started
         polling.value = window.setInterval(pollLobby, 2000);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
     }
 });
 
@@ -126,6 +147,7 @@ onUnmounted(() => {
     if (polling.value) {
         clearInterval(polling.value);
     }
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 
 const getDifficultyLabel = (level: number) => {
