@@ -3,7 +3,8 @@
     "allow": [
       "Bash(php artisan make:model:*)",
       "Bash(where:*)",
-      "Bash(C:Userssushi.configherdbinphp.bat artisan make:model Lobby --migration --no-interaction)"
+      "Bash(C:Userssushi.configherdbinphp.bat artisan make:model Lobby --migration --no-interaction)",
+      "Bash(dir databasemigrations /b)"
     ]
   },
   "enableAllProjectMcpServers": true,

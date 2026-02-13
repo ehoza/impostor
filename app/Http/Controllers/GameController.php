@@ -8,10 +8,10 @@ use App\Models\Player;
 use App\Models\Word;
 use App\Services\WordSelectionService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class GameController extends Controller
 {
@@ -61,7 +61,7 @@ class GameController extends Controller
             ->whereIn('status', ['waiting', 'playing'])
             ->first();
 
-        if (!$lobby) {
+        if (! $lobby) {
             throw ValidationException::withMessages([
                 'code' => 'Lobby not found or already closed.',
             ]);
@@ -144,7 +144,7 @@ class GameController extends Controller
         $currentPlayerId = session('current_player_id');
         $currentPlayer = $lobby->players()->find($currentPlayerId);
 
-        if (!$currentPlayer) {
+        if (! $currentPlayer) {
             return redirect()->route('home');
         }
 
@@ -160,6 +160,7 @@ class GameController extends Controller
             $players = $lobby->players->keyBy('id');
             $turnOrder = collect($lobby->turn_order)->map(function ($playerId) use ($players) {
                 $player = $players->get($playerId);
+
                 return $player ? [
                     'id' => $player->id,
                     'name' => $player->name,
@@ -209,21 +210,21 @@ class GameController extends Controller
             return response()->json(['error' => 'No words available'], 500);
         }
 
-        // Assign words and select impostor
-        $playerCount = $lobby->players->count();
-        $impostorCount = min($lobby->settings['impostor_count'] ?? 1, $playerCount - 1);
-        $impostorIndices = collect(range(0, $playerCount - 1))->random($impostorCount)->sort()->values();
-
-        // Set up turn order
         $playerIds = $lobby->players->pluck('id')->shuffle()->values()->all();
         $turnOrder = $playerIds;
 
-        foreach ($lobby->players as $index => $player) {
-            $isImpostor = $impostorIndices->contains($index);
+        $eligibleForImpostor = $lobby->players->filter(fn ($p) => ($p->impostor_streak ?? 0) < 3);
+        $impostorPool = $eligibleForImpostor->isEmpty() ? $lobby->players : $eligibleForImpostor;
+        $impostorCount = min($lobby->settings['impostor_count'] ?? 1, $impostorPool->count());
+        $impostorIds = $impostorPool->pluck('id')->shuffle()->take($impostorCount)->all();
+
+        foreach ($lobby->players as $player) {
+            $isImpostor = in_array($player->id, $impostorIds);
             $player->update([
                 'is_impostor' => $isImpostor,
                 'word_id' => $isImpostor ? $word->impostor_word_id : $word->id,
                 'is_eliminated' => false,
+                'impostor_streak' => $isImpostor ? 1 : 0,
                 'has_voted_vote_now' => false,
                 'has_voted_reroll' => false,
                 'turn_position' => array_search($player->id, $turnOrder),
@@ -262,7 +263,7 @@ class GameController extends Controller
         $currentPlayerId = session('current_player_id');
         $currentPlayer = $lobby->players()->find($currentPlayerId);
 
-        if (!$currentPlayer) {
+        if (! $currentPlayer) {
             return response()->json(['error' => 'Not in lobby'], 403);
         }
 
@@ -285,13 +286,17 @@ class GameController extends Controller
         $voteNowThreshold = ceil($activePlayers * 0.7);
         $voteNowProgress = $activePlayers > 0 ? ($voteNowCount / $voteNowThreshold) * 100 : 0;
 
-        // Calculate reroll progress
         $rerollCount = count($lobby->reroll_votes ?? []);
         $rerollThreshold = ceil($activePlayers * 0.7);
         $rerollProgress = $activePlayers > 0 ? ($rerollCount / $rerollThreshold) * 100 : 0;
 
+        $voteKey = "lobby_{$lobby->id}_votes";
+        $eliminationVotes = Cache::get($voteKey, []);
+        $eliminationVoteHasVoted = isset($eliminationVotes[$currentPlayerId]);
+
         return response()->json([
             'status' => $lobby->status,
+            'game_result' => $lobby->game_result,
             'word' => $playerWord ? $playerWord->word : null,
             'is_impostor' => $isImpostor,
             'word_category' => $playerWord?->category,
@@ -315,91 +320,157 @@ class GameController extends Controller
                 'progress' => min($rerollProgress, 100),
                 'has_voted' => in_array($currentPlayerId, $lobby->reroll_votes ?? []),
             ],
+            'elimination_vote_has_voted' => $eliminationVoteHasVoted,
         ]);
     }
 
     /**
-     * Vote to eliminate a player.
+     * Vote to eliminate a player. One vote per player per voting phase (locked in).
+     * Pass target_player_id: null to skip voting.
      */
     public function votePlayer(Request $request, string $code): \Illuminate\Http\JsonResponse
     {
         $validated = $request->validate([
-            'target_player_id' => 'required|exists:players,id',
+            'target_player_id' => 'nullable|exists:players,id',
         ]);
 
         $lobby = Lobby::where('code', strtoupper($code))->firstOrFail();
         $currentPlayerId = session('current_player_id');
 
         $currentPlayer = $lobby->players()->find($currentPlayerId);
-        if (!$currentPlayer || $currentPlayer->is_eliminated) {
+        if (! $currentPlayer || $currentPlayer->is_eliminated) {
             return response()->json(['error' => 'Cannot vote'], 403);
         }
 
-        // Record vote (simple version - store in cache)
         $voteKey = "lobby_{$lobby->id}_votes";
         $votes = Cache::get($voteKey, []);
+
+        if (isset($votes[$currentPlayerId])) {
+            return response()->json(['error' => 'Vote already locked in'], 400);
+        }
+
         $votes[$currentPlayerId] = $validated['target_player_id'];
         Cache::put($voteKey, $votes, now()->addMinutes(10));
 
-        // Broadcast vote update
         broadcast(new \App\Events\PlayerVoted($lobby, $currentPlayer->id, $validated['target_player_id']));
 
         return response()->json(['success' => true]);
     }
 
     /**
-     * End voting phase and eliminate player.
+     * End voting phase and eliminate player (or skip if no votes).
      */
     public function endVoting(Request $request, string $code): \Illuminate\Http\JsonResponse
     {
-        $lobby = Lobby::where('code', strtoupper($code))->firstOrFail();
+        $lobby = Lobby::where('code', strtoupper($code))->with('players')->firstOrFail();
         $this->validateHost($lobby);
 
         $voteKey = "lobby_{$lobby->id}_votes";
         $votes = Cache::get($voteKey, []);
 
-        if (empty($votes)) {
-            return response()->json(['success' => true, 'eliminated' => null]);
+        $eliminationVotes = array_filter($votes, fn ($targetId) => $targetId !== null);
+        Cache::forget($voteKey);
+
+        $this->resetVotePhase($lobby);
+
+        if (empty($eliminationVotes)) {
+            $this->advanceTurn($lobby);
+            broadcast(new \App\Events\VotingEnded($lobby, null, null));
+
+            return response()->json([
+                'success' => true,
+                'eliminated' => null,
+                'was_impostor' => null,
+                'game_result' => null,
+                'skipped' => true,
+            ]);
         }
 
-        // Count votes
-        $voteCounts = array_count_values($votes);
+        $voteCounts = array_count_values($eliminationVotes);
         arsort($voteCounts);
-        $mostVotedId = array_key_first($voteCounts);
+        $mostVotedId = (int) array_key_first($voteCounts);
 
-        // Eliminate player
-        $eliminatedPlayer = Player::find($mostVotedId);
-        if ($eliminatedPlayer) {
-            $eliminatedPlayer->update(['is_eliminated' => true]);
+        $eliminatedPlayer = $lobby->players()->find($mostVotedId);
+        if (! $eliminatedPlayer) {
+            $this->advanceTurn($lobby);
+            broadcast(new \App\Events\VotingEnded($lobby, null, null));
+
+            return response()->json([
+                'success' => true,
+                'eliminated' => null,
+                'was_impostor' => null,
+                'game_result' => null,
+            ]);
         }
 
-        // Check win condition
+        $eliminatedPlayer->update(['is_eliminated' => true]);
+
         $impostorsRemaining = $lobby->players()->where('is_impostor', true)->where('is_eliminated', false)->count();
         $crewRemaining = $lobby->players()->where('is_impostor', false)->where('is_eliminated', false)->count();
 
-        $gameResult = null;
-        if ($impostorsRemaining === 0) {
-            $gameResult = 'crew_wins';
+        if ($impostorsRemaining >= $crewRemaining) {
             $lobby->update([
                 'status' => 'finished',
-                'crew_wins' => $lobby->crew_wins + 1,
-            ]);
-        } elseif ($impostorsRemaining >= $crewRemaining) {
-            $gameResult = 'impostor_wins';
-            $lobby->update([
-                'status' => 'finished',
+                'game_result' => 'impostor_wins',
                 'impostor_wins' => $lobby->impostor_wins + 1,
             ]);
+            broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'impostor_wins'));
+
+            return response()->json([
+                'success' => true,
+                'eliminated' => [
+                    'id' => $eliminatedPlayer->id,
+                    'name' => $eliminatedPlayer->name,
+                    'is_impostor' => false,
+                ],
+                'was_impostor' => false,
+                'game_result' => 'impostor_wins',
+            ]);
         }
 
-        // Move to next turn if game continues
-        if (!$gameResult) {
-            $this->advanceTurn($lobby);
+        if ($eliminatedPlayer->is_impostor) {
+            $restarted = $this->restartRound($lobby);
+            $lobby->update(['crew_wins' => $lobby->crew_wins + 1]);
+
+            if (! $restarted) {
+                $lobby->update([
+                    'status' => 'finished',
+                    'game_result' => 'crew_wins',
+                ]);
+            }
+
+            broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'crew_wins'));
+
+            return response()->json([
+                'success' => true,
+                'eliminated' => [
+                    'id' => $eliminatedPlayer->id,
+                    'name' => $eliminatedPlayer->name,
+                    'is_impostor' => true,
+                ],
+                'was_impostor' => true,
+                'game_result' => $restarted ? null : 'crew_wins',
+                'round_restarted' => $restarted,
+            ]);
         }
 
-        Cache::forget($voteKey);
+        $this->advanceTurn($lobby);
+        broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, null));
 
-        // Reset vote now and reroll votes
+        return response()->json([
+            'success' => true,
+            'eliminated' => [
+                'id' => $eliminatedPlayer->id,
+                'name' => $eliminatedPlayer->name,
+                'is_impostor' => false,
+            ],
+            'was_impostor' => false,
+            'game_result' => null,
+        ]);
+    }
+
+    private function resetVotePhase(Lobby $lobby): void
+    {
         $lobby->update([
             'vote_now_votes' => [],
             'reroll_votes' => [],
@@ -408,15 +479,53 @@ class GameController extends Controller
             'has_voted_vote_now' => false,
             'has_voted_reroll' => false,
         ]);
+    }
 
-        broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, $gameResult));
+    private function restartRound(Lobby $lobby): bool
+    {
+        $lobby->load('players');
+        $word = app(WordSelectionService::class)->selectWordForGame();
 
-        return response()->json([
-            'success' => true,
-            'eliminated' => $eliminatedPlayer?->toArray(),
-            'was_impostor' => $eliminatedPlayer?->is_impostor,
-            'game_result' => $gameResult,
+        if (! $word) {
+            return false;
+        }
+
+        $allPlayers = $lobby->players;
+        $eligibleForImpostor = $allPlayers->filter(fn ($p) => ($p->impostor_streak ?? 0) < 3);
+        $impostorPool = $eligibleForImpostor->isEmpty() ? $allPlayers : $eligibleForImpostor;
+        $impostorCount = min($lobby->settings['impostor_count'] ?? 1, $impostorPool->count());
+        $impostorIds = $impostorPool->pluck('id')->shuffle()->take($impostorCount)->all();
+
+        $playerIds = $allPlayers->pluck('id')->shuffle()->values()->all();
+
+        foreach ($lobby->players as $player) {
+            $isImpostor = in_array($player->id, $impostorIds);
+            $player->update([
+                'is_impostor' => $isImpostor,
+                'word_id' => $isImpostor ? $word->impostor_word_id : $word->id,
+                'is_eliminated' => false,
+                'impostor_streak' => $isImpostor ? ($player->impostor_streak ?? 0) + 1 : 0,
+                'has_voted_vote_now' => false,
+                'has_voted_reroll' => false,
+                'turn_position' => array_search($player->id, $playerIds) !== false ? array_search($player->id, $playerIds) : null,
+            ]);
+        }
+
+        $lobby->update([
+            'status' => 'playing',
+            'word_id' => $word->id,
+            'turn_order' => $playerIds,
+            'current_turn_index' => 0,
+            'current_turn_player_id' => $playerIds[0] ?? null,
+            'turn_started_at' => now(),
+            'vote_now_votes' => [],
+            'reroll_votes' => [],
+            'current_round' => $lobby->current_round + 1,
         ]);
+
+        broadcast(new \App\Events\GameStarted($lobby, $word));
+
+        return true;
     }
 
     /**
@@ -430,19 +539,30 @@ class GameController extends Controller
         $player = $lobby->players()->find($currentPlayerId);
 
         if ($player) {
-            // If host, transfer or delete lobby
             if ($player->is_host) {
                 $newHost = $lobby->players()->where('id', '!=', $player->id)->first();
                 if ($newHost) {
                     $newHost->update(['is_host' => true]);
                 } else {
                     $lobby->delete();
+
                     return redirect()->route('home');
                 }
             }
 
+            $playerId = $player->id;
             $player->delete();
-            broadcast(new \App\Events\PlayerLeft($lobby, $player->id));
+
+            if ($lobby->status === 'playing' && $lobby->turn_order) {
+                $turnOrder = array_values(array_filter($lobby->turn_order, fn ($id) => (int) $id !== $playerId));
+                $lobby->update(['turn_order' => $turnOrder]);
+
+                if ($lobby->current_turn_player_id === $playerId && ! empty($turnOrder)) {
+                    $this->advanceTurn($lobby->fresh());
+                }
+            }
+
+            broadcast(new \App\Events\PlayerLeft($lobby, $playerId));
         }
 
         return redirect()->route('home');
@@ -486,11 +606,11 @@ class GameController extends Controller
         $currentPlayerId = session('current_player_id');
         $currentPlayer = $lobby->players()->find($currentPlayerId);
 
-        if (!$currentPlayer) {
+        if (! $currentPlayer) {
             return response()->json(['error' => 'Not in lobby'], 403);
         }
 
-        $isDm = !empty($validated['recipient_id']);
+        $isDm = ! empty($validated['recipient_id']);
 
         $message = Message::create([
             'lobby_id' => $lobby->id,
@@ -527,7 +647,7 @@ class GameController extends Controller
         $currentPlayerId = session('current_player_id');
         $currentPlayer = $lobby->players()->find($currentPlayerId);
 
-        if (!$currentPlayer) {
+        if (! $currentPlayer) {
             return response()->json(['error' => 'Not in lobby'], 403);
         }
 
@@ -576,7 +696,7 @@ class GameController extends Controller
         $currentPlayerId = session('current_player_id');
         $currentPlayer = $lobby->players()->find($currentPlayerId);
 
-        if (!$currentPlayer || $currentPlayer->is_eliminated) {
+        if (! $currentPlayer || $currentPlayer->is_eliminated) {
             return response()->json(['error' => 'Cannot vote'], 403);
         }
 
@@ -594,6 +714,10 @@ class GameController extends Controller
         $activePlayers = $lobby->players->where('is_eliminated', false)->count();
         $threshold = ceil($activePlayers * 0.7);
         $activated = count($voteNowVotes) >= $threshold;
+
+        if ($activated) {
+            Cache::forget("lobby_{$lobby->id}_votes");
+        }
 
         broadcast(new \App\Events\VoteNowUpdated($lobby, count($voteNowVotes), $threshold, $activated));
 
@@ -617,11 +741,14 @@ class GameController extends Controller
         $currentPlayerId = session('current_player_id');
         $currentPlayer = $lobby->players()->find($currentPlayerId);
 
-        if (!$currentPlayer || $currentPlayer->is_eliminated) {
+        if (! $currentPlayer || $currentPlayer->is_eliminated) {
             return response()->json(['error' => 'Cannot vote'], 403);
         }
 
-        // Check if already voted
+        if ($currentPlayer->is_impostor) {
+            return response()->json(['error' => 'Impostor cannot vote for reroll'], 403);
+        }
+
         $rerollVotes = $lobby->reroll_votes ?? [];
         if (in_array($currentPlayerId, $rerollVotes)) {
             return response()->json(['error' => 'Already voted'], 400);
@@ -664,7 +791,7 @@ class GameController extends Controller
         $currentPlayer = $lobby->players()->find($currentPlayerId);
 
         // Only host or current turn player can advance
-        if (!$currentPlayer || (!$currentPlayer->is_host && $lobby->current_turn_player_id !== $currentPlayerId)) {
+        if (! $currentPlayer || (! $currentPlayer->is_host && $lobby->current_turn_player_id !== $currentPlayerId)) {
             return response()->json(['error' => 'Not authorized'], 403);
         }
 
@@ -696,18 +823,27 @@ class GameController extends Controller
             $newRound = $lobby->current_round + 1;
         }
 
-        // Find next non-eliminated player
+        $activeInOrder = $lobby->players()->whereIn('id', $turnOrder)->where('is_eliminated', false)->pluck('id')->all();
+        if (empty($activeInOrder)) {
+            return;
+        }
+
         $attempts = 0;
+        $nextPlayer = null;
         while ($attempts < count($turnOrder)) {
             $nextPlayerId = $turnOrder[$nextIndex];
             $nextPlayer = $lobby->players()->find($nextPlayerId);
 
-            if ($nextPlayer && !$nextPlayer->is_eliminated) {
+            if ($nextPlayer && ! $nextPlayer->is_eliminated) {
                 break;
             }
 
             $nextIndex = ($nextIndex + 1) % count($turnOrder);
             $attempts++;
+        }
+
+        if (! $nextPlayer || $nextPlayer->is_eliminated) {
+            return;
         }
 
         $lobby->update([
@@ -727,7 +863,7 @@ class GameController extends Controller
     {
         $word = app(WordSelectionService::class)->selectWordForGame();
 
-        if (!$word) {
+        if (! $word) {
             return;
         }
 
@@ -737,10 +873,11 @@ class GameController extends Controller
             'word_id' => $word->id,
         ]);
 
-        // Assign new words to players
+        $impostorWordId = $word->impostor_word_id ?? $word->id;
+
         foreach ($lobby->players as $player) {
             $player->update([
-                'word_id' => $player->is_impostor ? $word->impostor_word_id : $word->id,
+                'word_id' => $player->is_impostor ? $impostorWordId : $word->id,
                 'has_voted_reroll' => false,
             ]);
         }
@@ -782,7 +919,7 @@ class GameController extends Controller
         $currentPlayerId = session('current_player_id');
         $player = $lobby->players()->find($currentPlayerId);
 
-        if (!$player || !$player->is_host) {
+        if (! $player || ! $player->is_host) {
             throw ValidationException::withMessages([
                 'authorization' => 'Only the host can perform this action.',
             ]);

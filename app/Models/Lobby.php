@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lobby extends Model
 {
@@ -16,6 +16,7 @@ class Lobby extends Model
         'code',
         'name',
         'status',
+        'game_result',
         'settings',
         'word_id',
         'current_turn_player_id',

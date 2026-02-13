@@ -41,6 +41,7 @@ interface VoteData {
 
 interface GameStateData {
     status: string;
+    game_result?: string | null;
     word: string | null;
     is_impostor: boolean;
     word_category: string | null;
@@ -54,6 +55,7 @@ interface GameStateData {
     crew_wins: number;
     vote_now: VoteData;
     reroll: VoteData;
+    elimination_vote_has_voted?: boolean;
 }
 
 const props = defineProps<{
@@ -90,6 +92,7 @@ const gameState = ref<GameStateData>({
     crew_wins: 0,
     vote_now: { count: 0, threshold: 1, progress: 0, has_voted: false },
     reroll: { count: 0, threshold: 1, progress: 0, has_voted: false },
+    elimination_vote_has_voted: false,
 });
 
 const votingPhase = ref(false);
@@ -143,8 +146,8 @@ const fetchGameState = async () => {
             showNotification('Word has been rerolled!');
         }
 
-        if (response.data.status === 'finished' && !gameResult.value) {
-            checkGameEnd();
+        if (response.data.status === 'finished' && !gameResult.value && response.data.game_result) {
+            gameResult.value = response.data.game_result;
         }
     } catch (error) {
         console.error('Failed to fetch game state:', error);
@@ -159,32 +162,37 @@ const showNotification = (text: string) => {
     }, 3000);
 };
 
-const checkGameEnd = () => {
-    const impostorsRemaining = gameState.value.players.filter((p) => p.is_impostor && !p.is_eliminated).length;
-    const crewRemaining = gameState.value.players.filter((p) => !p.is_impostor && !p.is_eliminated).length;
 
-    if (impostorsRemaining === 0) {
-        gameResult.value = 'crew_wins';
-    } else if (impostorsRemaining >= crewRemaining) {
-        gameResult.value = 'impostor_wins';
-    }
-};
+const hasVotedElimination = computed(() => gameState.value.elimination_vote_has_voted ?? false);
 
 const voteForPlayer = (playerId: number) => {
-    if (!canVote.value) return;
+    if (!canVote.value || hasVotedElimination.value) return;
     selectedPlayerId.value = playerId;
 };
 
 const submitVote = async () => {
-    if (selectedPlayerId.value === null) return;
+    if (hasVotedElimination.value) return;
     try {
         await axios.post(vote.url(props.code), {
             target_player_id: selectedPlayerId.value,
         });
-        votes.value[selectedPlayerId.value] = (votes.value[selectedPlayerId.value] || 0) + 1;
         selectedPlayerId.value = null;
+        await fetchGameState();
     } catch (error) {
         console.error('Failed to vote:', error);
+    }
+};
+
+const submitSkipVote = async () => {
+    if (hasVotedElimination.value) return;
+    try {
+        await axios.post(vote.url(props.code), {
+            target_player_id: null,
+        });
+        selectedPlayerId.value = null;
+        await fetchGameState();
+    } catch (error) {
+        console.error('Failed to skip vote:', error);
     }
 };
 
@@ -192,16 +200,22 @@ const endVotingPhase = async () => {
     try {
         const response = await axios.post(endVoting.url(props.code));
         eliminatedPlayer.value = response.data.eliminated;
-        gameResult.value = response.data.game_result;
+        if (response.data.game_result) {
+            gameResult.value = response.data.game_result;
+        }
 
-        if (response.data.was_impostor !== undefined) {
+        if (response.data.eliminated) {
             showImpostorReveal.value = true;
+        }
+
+        if (response.data.round_restarted) {
+            await fetchGameState();
         }
 
         setTimeout(() => {
             votingPhase.value = false;
             showImpostorReveal.value = false;
-        }, 3000);
+        }, 4000);
     } catch (error) {
         console.error('Failed to end voting:', error);
     }
@@ -246,8 +260,9 @@ const handleVoteReroll = async () => {
     try {
         await axios.post(voteReroll.url(props.code));
         await fetchGameState();
-    } catch (error) {
-        console.error('Failed to vote reroll:', error);
+    } catch (error: unknown) {
+        const msg = axios.isAxiosError(error) && error.response?.data?.error;
+        showNotification(msg || 'Failed to vote for reroll');
     }
 };
 
@@ -272,7 +287,7 @@ onMounted(async () => {
         if (votingPhase.value) {
             if (timer.value > 0) {
                 timer.value--;
-            } else {
+            } else if (props.current_player?.is_host) {
                 await skipVotingAndNextTurn();
             }
         } else {
@@ -415,15 +430,22 @@ onUnmounted(() => {
                                 <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/20">
                                     <Target class="h-4 w-4 text-red-400" />
                                 </div>
-                                <h3 class="font-bold text-white">Vote to Eliminate</h3>
+                                <h3 class="font-bold text-white">
+                                    {{ hasVotedElimination ? 'Vote Locked In' : 'Vote to Eliminate' }}
+                                </h3>
                             </div>
                             <div class="mb-3 grid grid-cols-4 gap-2">
                                 <button
                                     v-for="player in activePlayers"
                                     :key="player.id"
                                     @click="voteForPlayer(player.id)"
-                                    class="flex items-center gap-2 rounded-xl p-2 transition-all"
-                                    :class="selectedPlayerId === player.id ? 'bg-red-600 text-white' : 'glass-light hover:bg-gray-700/50'"
+                                    :disabled="hasVotedElimination"
+                                    class="flex items-center gap-2 rounded-xl p-2 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                                    :class="
+                                        selectedPlayerId === player.id
+                                            ? 'bg-red-600 text-white'
+                                            : 'glass-light hover:bg-gray-700/50'
+                                    "
                                 >
                                     <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-700 text-sm font-bold">
                                         {{ player.name.charAt(0).toUpperCase() }}
@@ -433,19 +455,31 @@ onUnmounted(() => {
                             </div>
                             <div class="flex gap-2">
                                 <button
+                                    v-if="!hasVotedElimination"
                                     @click="submitVote"
                                     :disabled="selectedPlayerId === null"
                                     class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 font-bold text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <Check class="h-4 w-4" />
-                                    Confirm Vote
+                                    Lock In Vote
                                 </button>
+                                <button
+                                    v-if="!hasVotedElimination"
+                                    @click="submitSkipVote"
+                                    class="flex items-center justify-center gap-2 rounded-xl border border-gray-500 py-2.5 px-4 font-bold text-gray-400 transition-all hover:bg-gray-700/50 hover:text-white"
+                                >
+                                    Skip
+                                </button>
+                                <div v-else class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-600/30 py-2.5 font-bold text-green-400">
+                                    <Check class="h-4 w-4" />
+                                    Vote Locked
+                                </div>
                                 <button
                                     v-if="current_player?.is_host"
                                     @click="endVotingPhase"
                                     class="rounded-xl bg-amber-600 px-4 py-2.5 font-bold text-white transition-all hover:bg-amber-700"
                                 >
-                                    End
+                                    End Voting
                                 </button>
                             </div>
                         </div>
@@ -513,7 +547,7 @@ onUnmounted(() => {
                         <VoteButton
                             :vote-data="gameState.reroll"
                             type="reroll"
-                            :disabled="currentPlayerData?.is_eliminated"
+                            :disabled="currentPlayerData?.is_eliminated || gameState.is_impostor"
                             @vote="handleVoteReroll"
                         />
                     </div>
@@ -592,7 +626,10 @@ onUnmounted(() => {
                                 <div>
                                     <h3 class="text-sm font-bold text-white">Elimination Result</h3>
                                     <p class="text-sm font-bold" :class="eliminatedPlayer.is_impostor ? 'text-green-400' : 'text-red-400'">
-                                        {{ eliminatedPlayer.name }} was {{ eliminatedPlayer.is_impostor ? 'THE IMPOSTOR!' : 'a Crew Member' }}
+                                        {{ eliminatedPlayer.is_impostor ? 'THE IMPOSTOR!' : 'Not the impostor!' }}
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        {{ eliminatedPlayer.name }} was {{ eliminatedPlayer.is_impostor ? 'eliminated. Crew wins! New round starting...' : 'eliminated. Their turn is skipped.' }}
                                     </p>
                                 </div>
                             </div>
