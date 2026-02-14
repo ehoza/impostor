@@ -59,6 +59,8 @@ app/
 │   │   └── GameController.php    # Main game logic (all routes)
 │   └── Middleware/
 │       └── HandleInertiaRequests.php
+├── Jobs/
+│   └── AutoRestartGame.php       # Queue job for auto-restarting games
 ├── Models/
 │   ├── Lobby.php           # Game lobby with settings JSON
 │   ├── Player.php          # Player with session-based tracking
@@ -76,17 +78,19 @@ resources/js/
 │   ├── Lobby.vue           # Lobby waiting room with settings
 │   └── Game.vue            # Active game screen with chat
 ├── components/             # Reusable Vue components
+│   ├── AvatarSelectionModal.vue
 │   ├── ChatBox.vue         # Chat with public/DM support
 │   ├── TurnIndicator.vue   # Turn display and controls
 │   ├── VoteButton.vue      # Vote now/reroll buttons
 │   └── ThemeToggle.vue     # Dark/light mode toggle
 ├── composables/            # Vue composables
 │   └── useTheme.ts         # Theme management
+├── lib/
+│   ├── avatars.ts          # Avatar URL helper
+│   └── utils.ts            # Utility functions (cn helper)
 ├── routes/                 # Wayfinder generated routes (auto-generated)
 ├── actions/                # Wayfinder generated actions (auto-generated)
 ├── types/                  # TypeScript type definitions
-├── lib/
-│   └── utils.ts            # Utility functions (cn helper)
 ├── app.ts                  # Frontend entry point
 └── ssr.ts                  # SSR entry point
 
@@ -312,6 +316,7 @@ php artisan make:test --pest TestName
 | `/game/{code}/next-turn` | POST | `nextTurn` | Advance turn |
 | `/game/{code}/vote-now` | POST | `voteNow` | Vote to start voting |
 | `/game/{code}/vote-reroll` | POST | `voteReroll` | Vote to reroll word |
+| `/game/{code}/restart` | POST | `restartGame` | Restart game (host only) |
 
 ## Game Logic
 

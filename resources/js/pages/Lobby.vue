@@ -25,8 +25,10 @@ import {
     ArrowRight,
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import AvatarSelectionModal from '@/components/AvatarSelectionModal.vue';
 import { play, start, state } from '@/routes/game';
 import { leave, settings } from '@/routes/lobby';
+import { avatarUrl } from '@/lib/avatars';
 
 const props = defineProps<{
     lobby: {
@@ -46,12 +48,14 @@ const props = defineProps<{
     players: Array<{
         id: number;
         name: string;
+        avatar: string | null;
         is_host: boolean;
         is_ready: boolean;
     }>;
     current_player: {
         id: number;
         name: string;
+        avatar: string | null;
         is_host: boolean;
     } | null;
 }>();
@@ -73,7 +77,10 @@ const settingsForm = useForm({
 
 const joinForm = useForm({
     player_name: '',
+    avatar: '' as string | null,
 });
+
+const showJoinAvatarModal = ref(false);
 
 /** Server can return validation errors for keys like 'code' (e.g. lobby not found). */
 const joinFormErrors = computed(() => joinForm.errors as Record<string, string>);
@@ -205,6 +212,39 @@ const getDifficultyColor = (level: number) => {
                             <label class="mb-2 block text-xs font-medium text-text-secondary sm:text-sm">
                                 <span class="flex items-center gap-2">
                                     <User class="h-4 w-4 text-blue-400" />
+                                    Avatar
+                                    <span class="text-red-400">*</span>
+                                </span>
+                            </label>
+                            <button
+                                type="button"
+                                @click="showJoinAvatarModal = true"
+                                class="mb-4 flex w-full items-center gap-3 overflow-hidden rounded-lg border-2 border-dashed border-void-border bg-transparent px-4 py-3 transition-colors hover:border-blue-500/50 hover:bg-void-hover/50 sm:rounded-xl sm:py-4"
+                                :class="joinForm.avatar ? 'bg-void-hover/30' : ''"
+                            >
+                                <div
+                                    class="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-void-hover sm:h-14 sm:w-14"
+                                >
+                                    <img
+                                        v-if="joinForm.avatar"
+                                        :src="avatarUrl(joinForm.avatar)"
+                                        alt="Selected avatar"
+                                        class="h-full w-full object-cover"
+                                    />
+                                    <User v-else class="h-6 w-6 text-text-tertiary sm:h-7 sm:w-7" />
+                                </div>
+                                <span class="text-sm font-medium" :class="joinForm.avatar ? 'text-text-primary' : 'text-text-tertiary'">
+                                    {{ joinForm.avatar ? 'Change avatar' : 'Choose avatar (required)' }}
+                                </span>
+                            </button>
+                            <p v-if="joinForm.errors.avatar" class="mt-1.5 text-xs text-red-400 sm:text-sm">
+                                {{ joinForm.errors.avatar }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-xs font-medium text-text-secondary sm:text-sm">
+                                <span class="flex items-center gap-2">
+                                    <User class="h-4 w-4 text-blue-400" />
                                     Your Name
                                 </span>
                             </label>
@@ -225,7 +265,7 @@ const getDifficultyColor = (level: number) => {
                         </div>
                         <button
                             type="submit"
-                            :disabled="joinForm.processing"
+                            :disabled="joinForm.processing || !joinForm.avatar"
                             class="btn-primary flex w-full items-center justify-center gap-2 rounded-lg py-3.5 text-sm font-bold text-white sm:rounded-xl sm:py-4"
                         >
                             <template v-if="joinForm.processing">
@@ -239,6 +279,12 @@ const getDifficultyColor = (level: number) => {
                             </template>
                         </button>
                     </form>
+                    <AvatarSelectionModal
+                        :show="showJoinAvatarModal"
+                        :model-value="joinForm.avatar"
+                        @update:model-value="joinForm.avatar = $event"
+                        @close="showJoinAvatarModal = false"
+                    />
                 </template>
                 <template v-else>
                     <div class="flex flex-col items-center gap-4 py-4 text-center">
@@ -281,9 +327,9 @@ const getDifficultyColor = (level: number) => {
                 <div>
                     <div class="mb-2 flex items-center gap-3">
                         <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/20 sm:h-12 sm:w-12 sm:rounded-2xl"
+                            class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-void-elevated shadow-lg shadow-blue-500/20 sm:h-24 sm:w-24 sm:rounded-2xl"
                         >
-                            <ShieldAlert class="h-5 w-5 text-white sm:h-6 sm:w-6" />
+                            <img src="/images/Logo.png" alt="Word Impostor" class="h-12 w-auto object-contain sm:h-16" />
                         </div>
                         <div>
                             <div class="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -350,14 +396,20 @@ const getDifficultyColor = (level: number) => {
                             :style="{ animationDelay: `${index * 75}ms` }"
                         >
                             <div
-                                class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-base font-bold sm:h-12 sm:w-12 sm:rounded-xl sm:text-lg"
+                                class="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg text-base font-bold sm:h-12 sm:w-12 sm:rounded-xl sm:text-lg"
                                 :class="
                                     player.is_host
                                         ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/20 text-amber-400 ring-1 ring-amber-500/30'
                                         : 'bg-void-hover text-text-secondary'
                                 "
                             >
-                                {{ player.name.charAt(0).toUpperCase() }}
+                                <img
+                                    v-if="player.avatar"
+                                    :src="avatarUrl(player.avatar)"
+                                    :alt="player.name"
+                                    class="h-full w-full object-cover"
+                                />
+                                <span v-else>{{ player.name.charAt(0).toUpperCase() }}</span>
                             </div>
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-1.5 sm:gap-2">

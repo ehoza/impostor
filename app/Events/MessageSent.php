@@ -6,7 +6,6 @@ use App\Models\Lobby;
 use App\Models\Message;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -21,8 +20,7 @@ class MessageSent implements ShouldBroadcast
     public function __construct(
         public Lobby $lobby,
         public Message $message
-    ) {
-    }
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.
@@ -32,7 +30,7 @@ class MessageSent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('lobby.' . $this->lobby->code),
+            new Channel('lobby.'.$this->lobby->code),
         ];
     }
 

@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 test('can create a lobby', function () {
     $response = $this->post(route('lobby.create'), [
         'player_name' => 'Test Player',
+        'avatar' => 'portrait-no-border1.png',
         'lobby_name' => 'Test Lobby',
     ]);
 
@@ -27,6 +28,7 @@ test('can join an existing lobby', function () {
 
     $response = $this->post(route('lobby.join', 'TEST123'), [
         'player_name' => 'Joining Player',
+        'avatar' => 'portrait-no-border2.png',
     ]);
 
     $response->assertRedirect();
@@ -47,8 +49,13 @@ test('cannot join a full lobby', function () {
     Player::factory()->create(['lobby_id' => $lobby->id, 'name' => 'Player 1']);
     Player::factory()->create(['lobby_id' => $lobby->id, 'name' => 'Player 2']);
 
-    $response = $this->post(route('lobby.join', 'FULL12'), [
+    $response = $this->withHeaders([
+        'X-Inertia' => 'true',
+        'X-Requested-With' => 'XMLHttpRequest',
+        'Accept' => 'application/json',
+    ])->postJson(route('lobby.join', 'FULL12'), [
         'player_name' => 'Third Player',
+        'avatar' => 'portrait-no-border3.png',
     ]);
 
     $response->assertStatus(422);
@@ -57,8 +64,13 @@ test('cannot join a full lobby', function () {
 test('cannot join a game in progress', function () {
     $lobby = Lobby::factory()->create(['code' => 'PLAYIN', 'status' => 'playing']);
 
-    $response = $this->post(route('lobby.join', 'PLAYIN'), [
+    $response = $this->withHeaders([
+        'X-Inertia' => 'true',
+        'X-Requested-With' => 'XMLHttpRequest',
+        'Accept' => 'application/json',
+    ])->postJson(route('lobby.join', 'PLAYIN'), [
         'player_name' => 'Late Player',
+        'avatar' => 'portrait-no-border4.png',
     ]);
 
     $response->assertStatus(422);
@@ -97,9 +109,16 @@ test('only host can start game', function () {
     $host = Player::factory()->create(['lobby_id' => $lobby->id, 'is_host' => true]);
     $player = Player::factory()->create(['lobby_id' => $lobby->id, 'is_host' => false, 'session_id' => 'player-session']);
 
-    $this->withSession(['current_player_id' => $player->id])
-        ->post(route('game.start', 'NOHOST'))
-        ->assertStatus(403);
+    $response = $this->withHeaders([
+        'X-Inertia' => 'true',
+        'X-Requested-With' => 'XMLHttpRequest',
+        'Accept' => 'application/json',
+    ])->withSession(['current_player_id' => $player->id])
+        ->postJson(route('game.start', 'NOHOST'));
+
+    // The controller uses ValidationException for host checks (422)
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['authorization']);
 });
 
 test('impostor is randomly selected when game starts', function () {
@@ -226,8 +245,10 @@ test('host can update lobby settings', function () {
     $lobby = Lobby::factory()->create(['code' => 'SETTNG', 'status' => 'waiting']);
     $host = Player::factory()->create(['lobby_id' => $lobby->id, 'is_host' => true, 'session_id' => 'host']);
 
-    $response = $this->withSession(['current_player_id' => $host->id])
-        ->post(route('lobby.settings', 'SETTNG'), [
+    $response = $this->withHeaders([
+        'Accept' => 'application/json',
+    ])->withSession(['current_player_id' => $host->id])
+        ->postJson(route('lobby.settings', 'SETTNG'), [
             'settings' => [
                 'impostor_count' => 2,
                 'max_players' => 15,
@@ -248,10 +269,16 @@ test('non-host cannot update settings', function () {
     $host = Player::factory()->create(['lobby_id' => $lobby->id, 'is_host' => true]);
     $player = Player::factory()->create(['lobby_id' => $lobby->id, 'is_host' => false, 'session_id' => 'player']);
 
-    $response = $this->withSession(['current_player_id' => $player->id])
-        ->post(route('lobby.settings', 'NOAUTH'), [
+    $response = $this->withHeaders([
+        'X-Inertia' => 'true',
+        'X-Requested-With' => 'XMLHttpRequest',
+        'Accept' => 'application/json',
+    ])->withSession(['current_player_id' => $player->id])
+        ->postJson(route('lobby.settings', 'NOAUTH'), [
             'settings' => ['impostor_count' => 5],
         ]);
 
-    $response->assertStatus(403);
+    // The controller uses ValidationException for host checks (422)
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['authorization']);
 });

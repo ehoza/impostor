@@ -2,16 +2,23 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import { Users, Plus, LogIn, User, Building2, Sparkles, ShieldAlert, ArrowRight, Copy, Gamepad2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import AvatarSelectionModal from '@/components/AvatarSelectionModal.vue';
+import { avatarUrl } from '@/lib/avatars';
 
 const createForm = useForm({
     player_name: '',
+    avatar: '' as string | null,
     lobby_name: '',
 });
 
 const joinForm = useForm({
     player_name: '',
+    avatar: '' as string | null,
     code: '',
 });
+
+const showCreateAvatarModal = ref(false);
+const showJoinAvatarModal = ref(false);
 
 /** Server can return validation errors for keys not in the form type. */
 const createFormErrors = computed(() => createForm.errors as Record<string, string>);
@@ -51,20 +58,12 @@ const activeTab = ref<'create' | 'join'>('create');
                 <!-- Logo -->
                 <div class="relative mb-4 inline-block sm:mb-6">
                     <div class="animate-pulse-glow-blue absolute inset-0 rounded-2xl bg-blue-500/20 blur-xl sm:rounded-3xl sm:blur-2xl"></div>
-                    <div
-                        class="animate-float relative mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-2xl shadow-blue-500/30 sm:h-24 sm:w-24 sm:rounded-3xl"
-                    >
-                        <ShieldAlert class="h-8 w-8 text-white sm:h-12 sm:w-12" stroke-width="{1.5}" />
-                    </div>
-                    <!-- Floating accent -->
-                    <div
-                        class="animate-bounce-in absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-500 shadow-lg delay-500 sm:-top-2 sm:-right-2 sm:h-8 sm:w-8"
-                    >
-                        <Sparkles class="h-3 w-3 text-white sm:h-4 sm:w-4" />
-                    </div>
+                    <img
+                        src="/images/Logo.png"
+                        alt="Word Impostor"
+                        class="animate-float relative mx-auto h-40 w-auto sm:h-56"
+                    />
                 </div>
-
-                <h1 class="gradient-text-blue text-shadow mb-2 text-4xl font-black tracking-tight sm:mb-3 sm:text-6xl">IMPOSTOR</h1>
                 <p class="flex items-center justify-center gap-1 px-2 text-sm text-text-secondary sm:gap-2 sm:text-lg">
                     <Gamepad2 class="h-4 w-4 text-blue-400 sm:h-5 sm:w-5" />
                     <span class="hidden sm:inline">Find the impostor among your friends</span>
@@ -104,6 +103,37 @@ const activeTab = ref<'create' | 'join'>('create');
                 <!-- Create Lobby Form -->
                 <div v-if="activeTab === 'create'" class="animate-fade-in p-3 sm:p-5">
                     <form @submit.prevent="createForm.post('/lobby/create')" class="space-y-4 sm:space-y-5">
+                        <!-- Avatar -->
+                        <div class="animate-slide-in-up delay-75">
+                            <label class="mb-2 block flex items-center gap-1.5 text-xs font-medium text-text-secondary sm:gap-2 sm:text-sm">
+                                <User class="h-3.5 w-3.5 text-blue-400 sm:h-4 sm:w-4" />
+                                Avatar
+                                <span class="text-red-400">*</span>
+                            </label>
+                            <button
+                                type="button"
+                                @click="showCreateAvatarModal = true"
+                                class="group relative flex w-full items-center gap-3 overflow-hidden rounded-lg border-2 border-dashed transition-colors hover:border-blue-500/50 hover:bg-void-hover/50 sm:rounded-xl"
+                                :class="createForm.avatar ? 'border-void-border bg-void-hover/30' : 'border-void-border bg-transparent'"
+                            >
+                                <div
+                                    class="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md bg-void-hover sm:h-16 sm:w-16 sm:rounded-l-lg"
+                                >
+                                    <img
+                                        v-if="createForm.avatar"
+                                        :src="avatarUrl(createForm.avatar)"
+                                        alt="Selected avatar"
+                                        class="h-full w-full object-cover"
+                                    />
+                                    <User v-else class="h-6 w-6 text-text-tertiary sm:h-8 sm:w-8" />
+                                </div>
+                                <span class="text-sm font-medium" :class="createForm.avatar ? 'text-text-primary' : 'text-text-tertiary'">
+                                    {{ createForm.avatar ? 'Change avatar' : 'Choose avatar (required)' }}
+                                </span>
+                            </button>
+                            <p v-if="createForm.errors.avatar" class="mt-1.5 text-xs text-red-400">{{ createForm.errors.avatar }}</p>
+                        </div>
+
                         <!-- Player Name -->
                         <div class="animate-slide-in-up delay-100">
                             <label class="mb-2 block flex items-center gap-1.5 text-xs font-medium text-text-secondary sm:gap-2 sm:text-sm">
@@ -159,7 +189,7 @@ const activeTab = ref<'create' | 'join'>('create');
                         <!-- Submit Button -->
                         <button
                             type="submit"
-                            :disabled="createForm.processing"
+                            :disabled="createForm.processing || !createForm.avatar"
                             class="btn-primary animate-slide-in-up flex w-full items-center justify-center gap-1.5 rounded-lg py-3 text-sm font-bold text-white delay-300 sm:gap-2 sm:rounded-xl sm:py-4"
                         >
                             <template v-if="createForm.processing">
@@ -180,6 +210,37 @@ const activeTab = ref<'create' | 'join'>('create');
                 <!-- Join Lobby Form -->
                 <div v-else class="animate-fade-in p-3 sm:p-5">
                     <form @submit.prevent="joinForm.post(`/lobby/join/${joinForm.code.toUpperCase()}`)" class="space-y-4 sm:space-y-5">
+                        <!-- Avatar -->
+                        <div class="animate-slide-in-up delay-75">
+                            <label class="mb-2 block flex items-center gap-1.5 text-xs font-medium text-text-secondary sm:gap-2 sm:text-sm">
+                                <User class="h-3.5 w-3.5 text-blue-400 sm:h-4 sm:w-4" />
+                                Avatar
+                                <span class="text-red-400">*</span>
+                            </label>
+                            <button
+                                type="button"
+                                @click="showJoinAvatarModal = true"
+                                class="group relative flex w-full items-center gap-3 overflow-hidden rounded-lg border-2 border-dashed transition-colors hover:border-blue-500/50 hover:bg-void-hover/50 sm:rounded-xl"
+                                :class="joinForm.avatar ? 'border-void-border bg-void-hover/30' : 'border-void-border bg-transparent'"
+                            >
+                                <div
+                                    class="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-l-md bg-void-hover sm:h-16 sm:w-16 sm:rounded-l-lg"
+                                >
+                                    <img
+                                        v-if="joinForm.avatar"
+                                        :src="avatarUrl(joinForm.avatar)"
+                                        alt="Selected avatar"
+                                        class="h-full w-full object-cover"
+                                    />
+                                    <User v-else class="h-6 w-6 text-text-tertiary sm:h-8 sm:w-8" />
+                                </div>
+                                <span class="text-sm font-medium" :class="joinForm.avatar ? 'text-text-primary' : 'text-text-tertiary'">
+                                    {{ joinForm.avatar ? 'Change avatar' : 'Choose avatar (required)' }}
+                                </span>
+                            </button>
+                            <p v-if="joinForm.errors.avatar" class="mt-1.5 text-xs text-red-400">{{ joinForm.errors.avatar }}</p>
+                        </div>
+
                         <!-- Player Name -->
                         <div class="animate-slide-in-up delay-100">
                             <label class="mb-2 block flex items-center gap-1.5 text-xs font-medium text-text-secondary sm:gap-2 sm:text-sm">
@@ -235,9 +296,9 @@ const activeTab = ref<'create' | 'join'>('create');
                         <!-- Submit Button -->
                         <button
                             type="submit"
-                            :disabled="joinForm.processing"
+                            :disabled="joinForm.processing || !joinForm.avatar"
                             class="btn-secondary animate-slide-in-up flex w-full items-center justify-center gap-1.5 rounded-lg py-3 text-sm font-bold delay-300 sm:gap-2 sm:rounded-xl sm:py-4"
-                            :class="joinForm.processing ? 'cursor-not-allowed opacity-70' : ''"
+                            :class="joinForm.processing || !joinForm.avatar ? 'cursor-not-allowed opacity-70' : ''"
                         >
                             <template v-if="joinForm.processing">
                                 <div class="h-4 w-4 animate-spin rounded-full border-2 border-blue-400/30 border-t-blue-400 sm:h-5 sm:w-5"></div>
@@ -254,17 +315,40 @@ const activeTab = ref<'create' | 'join'>('create');
                 </div>
             </div>
 
+            <!-- Avatar modals -->
+            <AvatarSelectionModal
+                :show="showCreateAvatarModal"
+                :model-value="createForm.avatar"
+                @update:model-value="createForm.avatar = $event"
+                @close="showCreateAvatarModal = false"
+            />
+            <AvatarSelectionModal
+                :show="showJoinAvatarModal"
+                :model-value="joinForm.avatar"
+                @update:model-value="joinForm.avatar = $event"
+                @close="showJoinAvatarModal = false"
+            />
+
             <!-- Errors -->
             <div
-                v-if="createForm.errors.player_name || createFormErrors.code || joinForm.errors.player_name || joinFormErrors.code"
+                v-if="
+                    createForm.errors.player_name ||
+                    createForm.errors.avatar ||
+                    createFormErrors.code ||
+                    joinForm.errors.player_name ||
+                    joinForm.errors.avatar ||
+                    joinFormErrors.code
+                "
                 class="glass animate-bounce-in mt-4 rounded-xl border border-red-500/30 bg-red-900/20 p-3 sm:mt-5 sm:rounded-2xl sm:p-4"
             >
                 <div class="flex items-start gap-2 sm:gap-3">
                     <ShieldAlert class="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400 sm:h-5 sm:w-5" />
                     <div class="space-y-0.5 sm:space-y-1">
                         <p v-if="createForm.errors.player_name" class="text-xs text-red-300 sm:text-sm">{{ createForm.errors.player_name }}</p>
+                        <p v-if="createForm.errors.avatar" class="text-xs text-red-300 sm:text-sm">{{ createForm.errors.avatar }}</p>
                         <p v-if="createFormErrors.code" class="text-xs text-red-300 sm:text-sm">{{ createFormErrors.code }}</p>
                         <p v-if="joinForm.errors.player_name" class="text-xs text-red-300 sm:text-sm">{{ joinForm.errors.player_name }}</p>
+                        <p v-if="joinForm.errors.avatar" class="text-xs text-red-300 sm:text-sm">{{ joinForm.errors.avatar }}</p>
                         <p v-if="joinFormErrors.code" class="text-xs text-red-300 sm:text-sm">{{ joinFormErrors.code }}</p>
                     </div>
                 </div>

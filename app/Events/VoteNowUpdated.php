@@ -21,8 +21,7 @@ class VoteNowUpdated implements ShouldBroadcast
         public int $count,
         public int $threshold,
         public bool $activated
-    ) {
-    }
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.
@@ -32,7 +31,7 @@ class VoteNowUpdated implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('lobby.' . $this->lobby->code),
+            new Channel('lobby.'.$this->lobby->code),
         ];
     }
 

@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { MessageSquare, Send, Lock, Bell, Users, ChevronDown } from 'lucide-vue-next';
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { avatarUrl } from '@/lib/avatars';
 
 interface Message {
     id: number;
@@ -18,6 +19,7 @@ interface Player {
     id: number;
     name: string;
     is_eliminated: boolean;
+    avatar: string | null;
 }
 
 const props = defineProps<{
@@ -121,6 +123,11 @@ const getPlayerName = (playerId: number) => {
     return player?.name || 'Unknown';
 };
 
+const getPlayerAvatar = (playerId: number) => {
+    const player = props.players.find((p) => p.id === playerId);
+    return player?.avatar || null;
+};
+
 onMounted(() => {
     fetchMessages();
     pollingInterval = window.setInterval(fetchMessages, 2000);
@@ -180,9 +187,21 @@ onUnmounted(() => {
         <!-- Messages -->
         <div ref="chatContainer" class="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
             <div v-for="message in publicMessages" :key="message.id" :class="['flex gap-2', isOwnMessage(message) ? 'flex-row-reverse' : 'flex-row']">
+                <!-- Avatar -->
+                <div class="flex-shrink-0">
+                    <div class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-void-hover sm:h-8 sm:w-8">
+                        <img
+                            v-if="getPlayerAvatar(message.sender_id)"
+                            :src="avatarUrl(getPlayerAvatar(message.sender_id)!)"
+                            :alt="message.sender_name"
+                            class="h-full w-full object-cover"
+                        />
+                        <span v-else class="text-[10px] font-bold text-text-secondary">{{ message.sender_name.charAt(0).toUpperCase() }}</span>
+                    </div>
+                </div>
                 <div
                     :class="[
-                        'max-w-[85%] rounded-xl px-3 py-2 text-sm',
+                        'max-w-[75%] rounded-xl px-3 py-2 text-sm',
                         isOwnMessage(message) ? 'rounded-br-none bg-blue-600 text-white' : 'glass-light rounded-bl-none text-text-primary',
                     ]"
                 >
@@ -205,9 +224,21 @@ onUnmounted(() => {
                     :key="message.id"
                     :class="['mt-1 flex gap-2', isOwnMessage(message) ? 'flex-row-reverse' : 'flex-row']"
                 >
+                    <!-- Avatar -->
+                    <div class="flex-shrink-0">
+                        <div class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-void-hover sm:h-8 sm:w-8">
+                            <img
+                                v-if="getPlayerAvatar(message.sender_id)"
+                                :src="avatarUrl(getPlayerAvatar(message.sender_id)!)"
+                                :alt="message.sender_name"
+                                class="h-full w-full object-cover"
+                            />
+                            <span v-else class="text-[10px] font-bold text-text-secondary">{{ message.sender_name.charAt(0).toUpperCase() }}</span>
+                        </div>
+                    </div>
                     <div
                         :class="[
-                            'max-w-[85%] rounded-xl px-3 py-2 text-sm',
+                            'max-w-[75%] rounded-xl px-3 py-2 text-sm',
                             isOwnMessage(message)
                                 ? 'rounded-br-none bg-blue-600 text-white'
                                 : 'rounded-bl-none border border-blue-500/30 bg-blue-900/30 text-blue-100',

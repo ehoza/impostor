@@ -14,6 +14,7 @@ class Player extends Model
 
     protected $fillable = [
         'name',
+        'avatar',
         'lobby_id',
         'is_host',
         'is_impostor',

@@ -20,8 +20,7 @@ class WordRerolled implements ShouldBroadcast
     public function __construct(
         public Lobby $lobby,
         public Word $word
-    ) {
-    }
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.
@@ -31,7 +30,7 @@ class WordRerolled implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('lobby.' . $this->lobby->code),
+            new Channel('lobby.'.$this->lobby->code),
         ];
     }
 

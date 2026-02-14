@@ -21,8 +21,7 @@ class TurnAdvanced implements ShouldBroadcast
         public int $newTurnPlayerId,
         public int $newTurnIndex,
         public int $newRound
-    ) {
-    }
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.
@@ -32,7 +31,7 @@ class TurnAdvanced implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('lobby.' . $this->lobby->code),
+            new Channel('lobby.'.$this->lobby->code),
         ];
     }
 

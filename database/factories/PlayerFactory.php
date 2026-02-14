@@ -21,8 +21,11 @@ class PlayerFactory extends Factory
      */
     public function definition(): array
     {
+        $avatars = config('avatars.valid');
+
         return [
             'name' => fake()->name(),
+            'avatar' => $avatars[array_rand($avatars)],
             'lobby_id' => Lobby::factory(),
             'is_host' => false,
             'is_impostor' => false,

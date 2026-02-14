@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { Crown, ArrowRight, User, ChevronRight } from 'lucide-vue-next';
+import { Crown, User, ChevronRight } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { avatarUrl } from '@/lib/avatars';
 
 interface Player {
     id: number;
     name: string;
     is_eliminated: boolean;
     turn_position: number;
+    avatar: string | null;
 }
 
 const props = defineProps<{
@@ -42,8 +44,8 @@ const turnsPlayed = computed(() => {
 const CIRCLE_MAX_PLAYERS = 10;
 const circlePlayers = computed(() => activePlayers.value.slice(0, CIRCLE_MAX_PLAYERS));
 
-// Radius in pixels for positioning (container is 280px height, so radius ~110px)
-const RADIUS_PX = 105;
+// Radius in pixels for positioning (increased to give arrow plenty of visible room)
+const RADIUS_PX = 140;
 const CENTER_SIZE = 64; // w-16 = 64px
 
 function positionOnCircle(index: number, total: number): { left: string; top: string } {
@@ -72,8 +74,8 @@ const arrowRotationDeg = computed(() => {
     return (360 / n) * idx - 90;
 });
 
-// Arrow should extend from center to the player circle
-const arrowLength = computed(() => RADIUS_PX - CENTER_SIZE / 2 + 10);
+// Arrow should stop before the player avatar so it's visible (leave a 16px gap)
+const arrowLength = computed(() => RADIUS_PX - CENTER_SIZE / 2 - 16);
 </script>
 
 <template>
@@ -89,50 +91,59 @@ const arrowLength = computed(() => RADIUS_PX - CENTER_SIZE / 2 + 10);
         </div>
 
         <!-- Circle area -->
-        <div class="relative mx-auto w-full max-w-[320px]" style="height: 280px">
+        <div class="relative mx-auto w-full max-w-[380px]" style="height: 340px">
             <!-- Background circle track -->
             <div
                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-void-border/50"
                 :style="{ width: `${RADIUS_PX * 2}px`, height: `${RADIUS_PX * 2}px` }"
             ></div>
 
-            <!-- Rotating Arrow - positioned BEHIND center but IN FRONT of background -->
+            <!-- Rotating Arrow using SVG assets -->
             <div
                 v-if="currentTurnIndexInCircle >= 0 && circlePlayers.length > 0"
                 class="absolute top-1/2 left-1/2 z-10 origin-center -translate-x-1/2 -translate-y-1/2 transition-transform duration-500 ease-out"
                 :style="{ transform: `rotate(${arrowRotationDeg}deg)` }"
             >
-                <!-- Arrow shaft extending from center outward -->
                 <div
                     class="relative flex items-center"
                     :style="{
-                        width: `${arrowLength}px`,
-                        transform: `translateX(${CENTER_SIZE / 2}px)`, // Start from edge of center circle
+                        width: `${arrowLength + 24}px`,
+                        transform: `translateX(${CENTER_SIZE / 2 - 6}px)`,
                     }"
                 >
-                    <div class="h-2 w-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 shadow-lg shadow-blue-500/50"></div>
-                    <ArrowRight class="absolute -right-1 h-6 w-6 flex-shrink-0 text-blue-400" stroke-width="3" />
+                    <!-- Shaft SVG -->
+                    <img
+                        src="/images/Shaft.svg"
+                        class="h-4 w-full"
+                        :class="isMyTurn ? 'brightness-125' : 'opacity-80'"
+                        alt=""
+                    />
+                    <!-- Arrow Head SVG -->
+                    <img
+                        src="/images/Arrow_head.svg"
+                        class="absolute -right-2.5 h-6 w-6 flex-shrink-0"
+                        :class="isMyTurn ? 'brightness-125' : 'opacity-80'"
+                        alt=""
+                    />
                 </div>
             </div>
 
-            <!-- Center Indicator -->
+            <!-- Center Indicator using SVG -->
             <div class="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
-                <div
-                    class="relative flex h-16 w-16 items-center justify-center rounded-full shadow-xl transition-all duration-300"
-                    :class="[
-                        isMyTurn
-                            ? 'animate-pulse bg-gradient-to-br from-blue-400 to-blue-600 ring-4 shadow-blue-500/50 ring-blue-500/30'
-                            : 'border-2 border-void-border bg-void-elevated shadow-black/50',
-                    ]"
-                >
-                    <!-- Pulse decoration when it's user's turn -->
-                    <div v-if="isMyTurn" class="absolute -inset-1 animate-ping rounded-full bg-blue-400/20"></div>
-
+                <div class="relative flex h-16 w-16 items-center justify-center">
+                    <!-- Center SVG background -->
+                    <img
+                        src="/images/Center.svg"
+                        class="absolute inset-0 h-full w-full"
+                        :class="isMyTurn ? 'drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]' : 'opacity-90'"
+                        alt=""
+                    />
+                    <div v-if="isMyTurn" class="absolute -inset-2 animate-ping rounded-full bg-blue-400/10"></div>
                     <div class="relative z-10 text-center">
-                        <div class="text-2xl leading-none font-black" :class="isMyTurn ? 'text-white' : 'text-blue-400'">
+                        <div class="text-2xl leading-none font-black text-blue-400">
                             {{ currentTurnIndexInCircle >= 0 ? currentTurnIndexInCircle + 1 : '–' }}
                         </div>
-                        <div class="text-xs font-medium tracking-wider text-text-tertiary">/{{ circlePlayers.length }}</div>
+                        <div class="text-[10px] font-medium tracking-wider text-text-tertiary">/{{ circlePlayers.length }}</div>
                     </div>
                 </div>
             </div>
@@ -153,7 +164,7 @@ const arrowLength = computed(() => RADIUS_PX - CENTER_SIZE / 2 + 10);
                 >
                     <!-- Player avatar -->
                     <div
-                        class="flex h-12 w-12 items-center justify-center rounded-xl text-base font-bold shadow-lg transition-all duration-300"
+                        class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl text-base font-bold shadow-lg transition-all duration-300"
                         :class="[
                             player.id === currentTurnPlayerId
                                 ? 'bg-gradient-to-br from-blue-400 to-blue-500 text-white ring-2 shadow-blue-500/40 ring-white/50'
@@ -161,7 +172,13 @@ const arrowLength = computed(() => RADIUS_PX - CENTER_SIZE / 2 + 10);
                             player.id === currentPlayerId ? 'ring-offset-void ring-2 ring-blue-400 ring-offset-2' : '',
                         ]"
                     >
-                        {{ player.name.charAt(0).toUpperCase() }}
+                        <img
+                            v-if="player.avatar"
+                            :src="avatarUrl(player.avatar)"
+                            :alt="player.name"
+                            class="h-full w-full object-cover"
+                        />
+                        <span v-else>{{ player.name.charAt(0).toUpperCase() }}</span>
                     </div>
 
                     <!-- Player name -->

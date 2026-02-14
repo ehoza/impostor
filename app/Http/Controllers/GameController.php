@@ -11,6 +11,7 @@ use App\Services\WordSelectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -23,6 +24,7 @@ class GameController extends Controller
     {
         $validated = $request->validate([
             'player_name' => 'required|string|max:30',
+            'avatar' => ['required', 'string', Rule::in(config('avatars.valid'))],
             'lobby_name' => 'nullable|string|max:50',
             'settings' => 'nullable|array',
             'settings.language' => 'nullable|string|in:en,ro',
@@ -42,7 +44,7 @@ class GameController extends Controller
             'reroll_votes' => [],
         ]);
 
-        $player = $this->createPlayer($lobby, $validated['player_name'], true);
+        $player = $this->createPlayer($lobby, $validated['player_name'], $validated['avatar'], true);
 
         // Cache session
         $this->cachePlayerSession($player->id, $code);
@@ -57,6 +59,7 @@ class GameController extends Controller
     {
         $validated = $request->validate([
             'player_name' => 'required|string|max:30',
+            'avatar' => ['required', 'string', Rule::in(config('avatars.valid'))],
         ]);
 
         $lobby = Lobby::where('code', strtoupper($code))
@@ -83,7 +86,7 @@ class GameController extends Controller
             ]);
         }
 
-        $player = $this->createPlayer($lobby, $validated['player_name'], false);
+        $player = $this->createPlayer($lobby, $validated['player_name'], $validated['avatar'], false);
         $this->cachePlayerSession($player->id, $code);
 
         // Broadcast to other players
@@ -112,6 +115,7 @@ class GameController extends Controller
             return [
                 'id' => $player->id,
                 'name' => $player->name,
+                'avatar' => $player->avatar,
                 'is_host' => $player->is_host,
                 'is_ready' => $player->is_ready ?? false,
             ];
@@ -129,6 +133,7 @@ class GameController extends Controller
             'current_player' => $currentPlayer ? [
                 'id' => $currentPlayer->id,
                 'name' => $currentPlayer->name,
+                'avatar' => $currentPlayer->avatar,
                 'is_host' => $currentPlayer->is_host,
             ] : null,
         ]);
@@ -166,6 +171,7 @@ class GameController extends Controller
                 return $player ? [
                     'id' => $player->id,
                     'name' => $player->name,
+                    'avatar' => $player->avatar,
                     'is_eliminated' => $player->is_eliminated,
                 ] : null;
             })->filter()->values()->all();
@@ -176,6 +182,7 @@ class GameController extends Controller
             'current_player' => [
                 'id' => $currentPlayer->id,
                 'name' => $currentPlayer->name,
+                'avatar' => $currentPlayer->avatar,
                 'is_host' => $currentPlayer->is_host,
             ],
             'lobby' => [
@@ -261,7 +268,7 @@ class GameController extends Controller
     {
         $lobby = Lobby::where('code', strtoupper($code))
             ->with(['players' => function ($query) {
-                $query->select('id', 'name', 'lobby_id', 'is_host', 'is_eliminated', 'turn_position');
+                $query->select('id', 'name', 'avatar', 'lobby_id', 'is_host', 'is_eliminated', 'turn_position');
             }])
             ->firstOrFail();
 
@@ -279,6 +286,7 @@ class GameController extends Controller
             return [
                 'id' => $player->id,
                 'name' => $player->name,
+                'avatar' => $player->avatar,
                 'is_host' => (bool) $player->is_host,
                 'is_eliminated' => (bool) $player->is_eliminated,
                 'turn_position' => $player->turn_position,
@@ -374,6 +382,13 @@ class GameController extends Controller
 
         broadcast(new \App\Events\PlayerVoted($lobby, $currentPlayer->id, $validated['target_player_id']));
 
+        // Check if all active players have voted - if so, auto-end voting
+        $activePlayers = $lobby->players()->where('is_eliminated', false)->count();
+        if (count($votes) >= $activePlayers) {
+            // All players voted - auto end voting
+            return $this->processVotingEnd($lobby, $votes);
+        }
+
         return response()->json(['success' => true]);
     }
 
@@ -388,10 +403,22 @@ class GameController extends Controller
         $voteKey = "lobby_{$lobby->id}_votes";
         $votes = Cache::get($voteKey, []);
 
-        $eliminationVotes = array_filter($votes, fn ($targetId) => $targetId !== null);
+        return $this->processVotingEnd($lobby, $votes);
+    }
+
+    /**
+     * Process voting end - can be called manually by host or automatically when all votes are in.
+     *
+     * @param  array<int, int|null>  $votes
+     */
+    private function processVotingEnd(Lobby $lobby, array $votes): \Illuminate\Http\JsonResponse
+    {
+        $voteKey = "lobby_{$lobby->id}_votes";
         Cache::forget($voteKey);
 
         $this->resetVotePhase($lobby);
+
+        $eliminationVotes = array_filter($votes, fn ($targetId) => $targetId !== null);
 
         if (empty($eliminationVotes)) {
             $this->advanceTurn($lobby);
@@ -694,7 +721,7 @@ class GameController extends Controller
     /**
      * Update lobby settings.
      */
-    public function updateSettings(Request $request, string $code): \Illuminate\Http\Response
+    public function updateSettings(Request $request, string $code): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $validated = $request->validate([
             'settings' => 'required|array',
@@ -712,6 +739,10 @@ class GameController extends Controller
         $lobby->update(['settings' => array_merge($lobby->settings, $validated['settings'])]);
 
         broadcast(new \App\Events\SettingsUpdated($lobby, $lobby->settings));
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return back();
     }
@@ -755,6 +786,7 @@ class GameController extends Controller
                 'content' => $message->content,
                 'sender_id' => $message->sender_id,
                 'sender_name' => $currentPlayer->name,
+                'sender_avatar' => $currentPlayer->avatar,
                 'recipient_id' => $message->recipient_id,
                 'is_dm' => $message->is_dm,
                 'created_at' => $message->created_at->toISOString(),
@@ -781,7 +813,7 @@ class GameController extends Controller
                     ->orWhere('recipient_id', $currentPlayerId)
                     ->orWhere('sender_id', $currentPlayerId);
             })
-            ->with('sender:id,name')
+            ->with('sender:id,name,avatar')
             ->orderBy('created_at', 'asc')
             ->limit(100)
             ->get()
@@ -791,6 +823,7 @@ class GameController extends Controller
                     'content' => $message->content,
                     'sender_id' => $message->sender_id,
                     'sender_name' => $message->sender->name,
+                    'sender_avatar' => $message->sender->avatar,
                     'recipient_id' => $message->recipient_id,
                     'is_dm' => $message->is_dm,
                     'is_read' => $message->is_read,
@@ -1020,10 +1053,11 @@ class GameController extends Controller
         return $code;
     }
 
-    private function createPlayer(Lobby $lobby, string $name, bool $isHost): Player
+    private function createPlayer(Lobby $lobby, string $name, string $avatar, bool $isHost): Player
     {
         return Player::create([
             'name' => $name,
+            'avatar' => $avatar,
             'lobby_id' => $lobby->id,
             'is_host' => $isHost,
             'session_id' => session()->getId(),

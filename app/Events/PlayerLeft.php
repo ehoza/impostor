@@ -20,7 +20,7 @@ class PlayerLeft implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('lobby.' . $this->lobby->code),
+            new Channel('lobby.'.$this->lobby->code),
         ];
     }
 

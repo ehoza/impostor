@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Broadcast;
 use App\Models\Lobby;
+use Illuminate\Support\Facades\Broadcast;
 
 // Allow all clients to authenticate with private/presence channels
 // In production, you should add proper authorization
