@@ -272,6 +272,31 @@
     }
 }
 
+@keyframes win-overlay-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+    60% {
+        transform: scale(1.02);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes lose-overlay-in {
+    0% {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 /* ============================================
    ANIMATION CLASSES
    ============================================ */
@@ -334,6 +359,37 @@
 }
 .animate-screen-flash-red {
     animation: screen-flash-red 0.6s ease-in-out;
+}
+.animate-win-overlay {
+    animation: win-overlay-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.animate-lose-overlay {
+    animation: lose-overlay-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Win/lose overlay transition */
+.win-lose-overlay-enter-active,
+.win-lose-overlay-leave-active {
+    transition: opacity 0.35s ease;
+}
+.win-lose-overlay-enter-active .relative,
+.win-lose-overlay-leave-active .relative {
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.win-lose-overlay-enter-from,
+.win-lose-overlay-leave-to {
+    opacity: 0;
+}
+.win-lose-overlay-enter-from .relative,
+.win-lose-overlay-leave-to .relative {
+    transform: scale(0.9);
+}
+
+.gradient-text-win {
+    background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 50%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 /* Stagger delays */

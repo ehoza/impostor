@@ -149,6 +149,14 @@ const isMyTurn = computed(() => {
     return gameState.value.current_turn_player_id === props.current_player.id;
 });
 
+const iWon = computed(() => {
+    if (!gameResult.value) return false;
+    return (
+        (gameResult.value === 'crew_wins' && !gameState.value.is_impostor) ||
+        (gameResult.value === 'impostor_wins' && gameState.value.is_impostor)
+    );
+});
+
 // Desktop turn indicator calculations
 const turnsPlayed = computed(() => {
     const n = Math.max(1, gameState.value.turn_order?.length ?? 0);
@@ -469,6 +477,48 @@ onUnmounted(() => {
     <div class="bg-void flex h-screen w-screen flex-col overflow-hidden">
         <!-- Elimination Flash Overlay -->
         <div v-if="showImpostorReveal && eliminatedPlayer && !eliminatedPlayer.is_impostor" class="elimination-flash"></div>
+
+        <!-- Win / Lose Overlay -->
+        <Transition name="win-lose-overlay">
+            <div
+                v-if="gameResult"
+                class="fixed inset-0 z-40 flex items-center justify-center p-4"
+                aria-live="polite"
+            >
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+                <div
+                    class="relative z-10 w-full max-w-md rounded-3xl border-2 p-8 text-center shadow-2xl sm:p-10"
+                    :class="
+                        iWon
+                            ? 'animate-win-overlay border-amber-500/60 bg-gradient-to-br from-amber-500/20 via-yellow-500/10 to-transparent'
+                            : 'animate-lose-overlay border-void-border bg-void-elevated/95'
+                    "
+                >
+                    <div
+                        class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl sm:mb-6 sm:h-24 sm:w-24"
+                        :class="iWon ? 'bg-amber-500/30 ring-2 ring-amber-400/50' : 'bg-void-hover ring-2 ring-void-border'"
+                    >
+                        <component
+                            :is="iWon ? Trophy : Skull"
+                            class="h-10 w-10 sm:h-12 sm:w-12"
+                            :class="iWon ? 'text-amber-400' : 'text-text-tertiary'"
+                        />
+                    </div>
+                    <h2
+                        class="text-2xl font-black tracking-tight sm:text-4xl"
+                        :class="iWon ? 'gradient-text-win text-amber-200' : 'text-text-secondary'"
+                    >
+                        {{ iWon ? 'YOU WIN!' : 'YOU LOSE' }}
+                    </h2>
+                    <p class="mt-2 text-sm text-text-secondary sm:mt-3 sm:text-base">
+                        {{ gameResult === 'crew_wins' ? 'Innocent wins the round' : 'Impostor wins the round' }}
+                    </p>
+                    <p v-if="autoRestartCountdown > 0" class="mt-4 text-sm font-semibold text-amber-400 sm:text-base">
+                        Next round in {{ autoRestartCountdown }}...
+                    </p>
+                </div>
+            </div>
+        </Transition>
 
         <!-- Notification Toast -->
         <Transition name="slide-down">
