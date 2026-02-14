@@ -141,6 +141,8 @@ const updateSettings = () => {
     });
 };
 
+const pollCount = ref(0);
+
 const pollLobby = async () => {
     try {
         const statusResponse = await axios.get(`/lobby/${props.lobby.code}/status`);
@@ -152,7 +154,10 @@ const pollLobby = async () => {
             router.visit(play.url(props.lobby.code));
             return;
         }
-        await router.reload({ only: ['lobby', 'players'] });
+        pollCount.value += 1;
+        if (pollCount.value % 6 === 0) {
+            await router.reload({ only: ['lobby', 'players'] });
+        }
     } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 404) {
             return;
