@@ -317,11 +317,11 @@ class GameController extends Controller
         // Calculate vote now progress
         $activePlayers = $lobby->players->where('is_eliminated', false)->count();
         $voteNowCount = count($lobby->vote_now_votes ?? []);
-        $voteNowThreshold = ceil($activePlayers * 0.7);
+        $voteNowThreshold = ceil($activePlayers * 0.75);
         $voteNowProgress = $activePlayers > 0 ? ($voteNowCount / $voteNowThreshold) * 100 : 0;
 
         $rerollCount = count($lobby->reroll_votes ?? []);
-        $rerollThreshold = ceil($activePlayers * 0.7);
+        $rerollThreshold = ceil($activePlayers * 0.75);
         $rerollProgress = $activePlayers > 0 ? ($rerollCount / $rerollThreshold) * 100 : 0;
 
         $voteKey = "lobby_{$lobby->id}_votes";
@@ -902,7 +902,7 @@ class GameController extends Controller
         $currentPlayer->update(['has_voted_vote_now' => true]);
 
         $activePlayers = $lobby->players->where('is_eliminated', false)->count();
-        $threshold = ceil($activePlayers * 0.7);
+        $threshold = ceil($activePlayers * 0.75);
         $activated = count($voteNowVotes) >= $threshold;
 
         if ($activated) {
@@ -950,7 +950,7 @@ class GameController extends Controller
         $currentPlayer->update(['has_voted_reroll' => true]);
 
         $activePlayers = $lobby->players->where('is_eliminated', false)->count();
-        $threshold = ceil($activePlayers * 0.7);
+        $threshold = ceil($activePlayers * 0.75);
         $activated = count($rerollVotes) >= $threshold;
 
         // If threshold reached, reroll the word

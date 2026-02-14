@@ -145,7 +145,11 @@ const pollLobby = async () => {
     try {
         const statusResponse = await axios.get(`/lobby/${props.lobby.code}/status`);
         if (statusResponse.data.status === 'playing') {
-            redirectToGameIfStarted();
+            if (polling.value) {
+                clearInterval(polling.value);
+                polling.value = null;
+            }
+            router.visit(play.url(props.lobby.code));
             return;
         }
         await router.reload({ only: ['lobby', 'players'] });
