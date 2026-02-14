@@ -14,11 +14,12 @@ import {
     Target,
     ChevronLeft,
     Crown,
-    ArrowRight,
+    ChevronDown,
+    RefreshCw,
 } from 'lucide-vue-next';
 import { onMounted, onUnmounted, ref, computed } from 'vue';
-import { avatarUrl } from '@/lib/avatars';
 import ChatBox from '@/components/ChatBox.vue';
+import { avatarUrl } from '@/lib/avatars';
 import { endVoting, state, vote, nextTurn, voteNow, voteReroll, restart } from '@/routes/game';
 import { leave } from '@/routes/lobby';
 
@@ -113,6 +114,7 @@ const gameResult = ref<string | null>(null);
 const eliminatedPlayer = ref<{ id: number; name: string; is_impostor: boolean } | null>(null);
 const showImpostorReveal = ref(false);
 const showChat = ref(false);
+const showPlayersDrawer = ref(false);
 const showDMNotification = ref(false);
 const dmNotificationText = ref('');
 const autoRestartCountdown = ref(0);
@@ -135,6 +137,10 @@ const activePlayers = computed(() => {
     return gameState.value.players.filter((p) => !p.is_eliminated);
 });
 
+const eliminatedPlayers = computed(() => {
+    return gameState.value.players.filter((p) => p.is_eliminated);
+});
+
 const currentTurnPlayer = computed(() => {
     return gameState.value.players.find((p) => p.id === gameState.value.current_turn_player_id);
 });
@@ -150,7 +156,7 @@ const turnsPlayed = computed(() => {
 });
 
 const circlePlayers = computed(() => activePlayers.value.slice(0, 10));
-const RADIUS_PX = 115; // Increased to give arrow plenty of room
+const RADIUS_PX = 115;
 const CENTER_SIZE = 48;
 
 function positionOnCircle(index: number, total: number): { left: string; top: string } {
@@ -205,6 +211,8 @@ function getDonutProgress(count: number): number {
     if (total === 0) return 0;
     return (count / total) * 100;
 }
+
+
 
 const fetchGameState = async () => {
     try {
@@ -479,67 +487,52 @@ onUnmounted(() => {
                 <!-- Logo & Round -->
                 <div class="flex items-center gap-2">
                     <div
-                        class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg bg-void-elevated shadow-lg shadow-blue-500/20 sm:h-20 sm:w-20 sm:rounded-xl"
+                        class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-void-elevated shadow-lg shadow-blue-500/20 sm:h-14 sm:w-14 sm:rounded-xl"
                     >
-                        <img src="/images/Logo.png" alt="Word Impostor" class="h-8 w-auto object-contain sm:h-12" />
+                        <img src="/images/Logo.png" alt="Word Impostor" class="h-6 w-auto object-contain sm:h-9" />
                     </div>
                     <div>
-                        <h1 class="text-xs font-bold text-text-primary sm:text-base">Round {{ gameState.current_round }}</h1>
+                        <h1 class="text-xs font-bold text-text-primary sm:text-sm">Round {{ gameState.current_round }}</h1>
                         <p class="font-mono text-[9px] text-text-secondary sm:text-xs">{{ code }}</p>
                     </div>
                 </div>
 
-                <!-- Word (Compact for mobile) -->
+                <!-- Word Display (Compact) -->
                 <div v-if="gameState.word" class="flex min-w-0 flex-1 items-center justify-center px-2">
                     <div
-                        class="rounded-lg border px-2 py-1 text-center"
+                        class="rounded-lg border px-2 py-1 text-center sm:rounded-xl sm:px-4 sm:py-2"
                         :class="gameState.is_impostor ? 'border-red-500/50 bg-red-950/30' : 'border-blue-500/50 bg-blue-950/30'"
                     >
-                        <span class="text-[10px] text-text-secondary">Your word:</span>
-                        <span class="ml-1 text-sm font-bold" :class="gameState.is_impostor ? 'text-red-400' : 'text-blue-400'">
+                        <span class="text-[10px] text-text-secondary sm:text-xs">Your word:</span>
+                        <span class="ml-1 text-sm font-bold sm:text-lg" :class="gameState.is_impostor ? 'text-red-400' : 'text-blue-400'">
                             {{ gameState.word }}
                         </span>
                     </div>
                 </div>
 
                 <!-- Scoreboard -->
-                <div class="glass flex items-center gap-1 rounded-lg p-1 sm:gap-2 sm:rounded-2xl sm:p-1.5">
+                <div class="glass flex items-center gap-1 rounded-lg p-1 sm:gap-2 sm:rounded-xl sm:p-1.5">
                     <div
-                        class="flex items-center gap-1 rounded-md px-1.5 py-0.5 sm:gap-2 sm:rounded-lg sm:px-3 sm:py-1"
+                        class="flex items-center gap-1 rounded-md px-1.5 py-0.5 sm:gap-2 sm:rounded-lg sm:px-2 sm:py-1"
                         :class="gameResult === 'impostor_wins' ? 'bg-red-500/20' : ''"
                     >
                         <Skull class="h-3 w-3 text-red-400 sm:h-4 sm:w-4" />
-                        <span class="text-sm font-black text-text-primary">{{ gameState.impostor_wins }}</span>
+                        <span class="text-xs font-black text-text-primary sm:text-sm">{{ gameState.impostor_wins }}</span>
                     </div>
-                    <div class="h-4 w-px bg-void-border sm:h-6"></div>
+                    <div class="h-3 w-px bg-void-border sm:h-4"></div>
                     <div
-                        class="flex items-center gap-1 rounded-md px-1.5 py-0.5 sm:gap-2 sm:rounded-lg sm:px-3 sm:py-1"
+                        class="flex items-center gap-1 rounded-md px-1.5 py-0.5 sm:gap-2 sm:rounded-lg sm:px-2 sm:py-1"
                         :class="gameResult === 'crew_wins' ? 'bg-blue-500/20' : ''"
                     >
                         <Trophy class="h-3 w-3 text-blue-400 sm:h-4 sm:w-4" />
-                        <span class="text-sm font-black text-text-primary">{{ gameState.crew_wins }}</span>
+                        <span class="text-xs font-black text-text-primary sm:text-sm">{{ gameState.crew_wins }}</span>
                     </div>
                 </div>
 
-                <!-- Actions -->
-                <div class="flex items-center gap-1">
-                    <button
-                        @click="showChat = !showChat"
-                        class="btn-glass relative rounded-lg p-1.5 sm:rounded-xl sm:p-2.5 md:hidden"
-                        :class="showChat ? 'bg-void-hover text-text-primary' : 'text-text-secondary'"
-                    >
-                        <MessageSquare class="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span
-                            v-if="unread_dm_count > 0"
-                            class="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white"
-                        >
-                            {{ unread_dm_count }}
-                        </span>
-                    </button>
-                    <button @click="leaveGame" class="btn-danger rounded-lg p-1.5 sm:rounded-xl sm:p-2.5">
-                        <LogOut class="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
-                </div>
+                <!-- Leave Button -->
+                <button @click="leaveGame" class="btn-danger rounded-lg p-1.5 sm:rounded-xl sm:p-2">
+                    <LogOut class="h-4 w-4 sm:h-5 sm:w-5" />
+                </button>
             </div>
         </header>
 
@@ -558,80 +551,44 @@ onUnmounted(() => {
                 </div>
             </aside>
 
-            <!-- Mobile Chat Drawer -->
-            <Transition name="slide-left">
+            <!-- Mobile Chat Drawer (Full Screen Modal) -->
+            <Transition name="fade">
                 <div
-                    v-show="showChat"
-                    class="bg-void fixed inset-y-0 left-0 z-40 flex h-full w-[280px] flex-col border-r border-void-border shadow-2xl md:hidden"
+                    v-if="showChat"
+                    class="fixed inset-0 z-40 flex flex-col bg-void md:hidden"
+                    @click.self="showChat = false"
                 >
-                    <div class="flex h-full flex-col p-3">
-                        <div class="mb-3 flex items-center justify-between">
-                            <span class="text-sm font-bold text-text-primary">Chat</span>
-                            <button @click="showChat = false" class="btn-glass rounded-lg p-1.5">
-                                <ChevronLeft class="h-4 w-4" />
-                            </button>
+                    <!-- Mobile Chat Header -->
+                    <div class="glass flex items-center justify-between border-b border-void-border px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <MessageSquare class="h-5 w-5 text-blue-400" />
+                            <span class="font-bold text-text-primary">Chat</span>
                         </div>
-                        <div class="flex-1 overflow-hidden">
-                            <ChatBox :code="code" :current-player-id="current_player.id" :players="gameState.players" />
-                        </div>
+                        <button @click="showChat = false" class="btn-glass rounded-lg p-2">
+                            <ChevronLeft class="h-5 w-5" />
+                        </button>
+                    </div>
+                    <!-- Mobile Chat Content -->
+                    <div class="flex-1 overflow-hidden p-3">
+                        <ChatBox :code="code" :current-player-id="current_player.id" :players="gameState.players" />
                     </div>
                 </div>
             </Transition>
 
             <!-- Center: Main Game Area -->
-            <section class="flex min-w-0 flex-1 flex-col overflow-y-auto">
-                <!-- Full Word Display (Desktop) / Hidden on Mobile (shown in header) -->
-                <div v-if="gameState.word" class="hidden flex-shrink-0 p-4 sm:block sm:p-6">
-                    <div
-                        class="word-card relative overflow-hidden rounded-2xl border-2 p-6 text-center sm:rounded-3xl sm:p-8"
-                        :class="gameState.is_impostor ? 'border-red-500/50 bg-red-950/20' : 'border-blue-500/50 bg-blue-950/20'"
-                    >
-                        <div
-                            class="absolute inset-0 opacity-50"
-                            :class="
-                                gameState.is_impostor
-                                    ? 'bg-gradient-to-br from-red-600/20 to-transparent'
-                                    : 'bg-gradient-to-br from-blue-600/20 to-transparent'
-                            "
-                        ></div>
-                        <div class="relative z-10">
-                            <div
-                                class="mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tracking-wider uppercase sm:mb-4 sm:gap-2 sm:px-4 sm:py-1.5 sm:text-sm"
-                                :class="
-                                    gameState.is_impostor
-                                        ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
-                                        : 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30'
-                                "
-                            >
-                                <Skull v-if="gameState.is_impostor" class="h-3 w-3 sm:h-4 sm:w-4" />
-                                <Trophy v-else class="h-3 w-3 sm:h-4 sm:w-4" />
-                                {{ gameState.is_impostor ? 'You are the IMPOSTOR' : 'You are CREW' }}
-                            </div>
-
-                            <div
-                                class="text-3xl font-black tracking-wider uppercase sm:text-5xl md:text-6xl"
-                                :class="
-                                    gameState.is_impostor ? 'text-shadow-glow-red animate-pulse text-red-400' : 'text-shadow-glow-blue text-blue-400'
-                                "
-                            >
-                                {{ gameState.word }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Game Content -->
-                <div class="flex-1 space-y-2 p-2 sm:space-y-4 sm:p-4">
+            <section class="flex min-w-0 flex-1 flex-col overflow-hidden">
+                <!-- Scrollable Content -->
+                <div class="mobile-game-scroll flex-1 overflow-y-auto p-3 sm:p-4">
                     <!-- Victory Banner -->
                     <Transition name="bounce">
                         <div
                             v-if="gameResult"
-                            class="glass flex-shrink-0 rounded-xl border-2 p-3 text-center sm:rounded-2xl sm:p-6"
+                            class="glass mb-3 flex-shrink-0 rounded-xl border-2 p-3 text-center sm:mb-4 sm:rounded-2xl sm:p-4"
                             :class="gameResult === 'crew_wins' ? 'border-blue-500/50 bg-blue-900/30' : 'border-red-500/50 bg-red-900/30'"
                         >
                             <div class="flex items-center justify-center gap-3 sm:gap-4">
                                 <div
-                                    class="flex h-10 w-10 items-center justify-center rounded-lg sm:h-20 sm:w-20 sm:rounded-2xl"
+                                    class="flex h-10 w-10 items-center justify-center rounded-lg sm:h-16 sm:w-16 sm:rounded-2xl"
                                     :class="gameResult === 'crew_wins' ? 'bg-blue-500/20' : 'bg-red-500/20'"
                                 >
                                     <component
@@ -641,7 +598,7 @@ onUnmounted(() => {
                                     />
                                 </div>
                                 <div class="text-left">
-                                    <h2 class="text-base font-black text-text-primary sm:text-3xl">
+                                    <h2 class="text-base font-black text-text-primary sm:text-2xl">
                                         {{ gameResult === 'crew_wins' ? 'Innocent Wins!' : 'Impostor Wins!' }}
                                     </h2>
                                     <p v-if="eliminatedPlayer" class="text-xs text-text-secondary sm:text-sm">
@@ -655,142 +612,105 @@ onUnmounted(() => {
                         </div>
                     </Transition>
 
-                    <!-- Turn Indicator -->
-                    <div v-if="!gameResult && !votingPhase" class="glass-card rounded-xl p-3 sm:rounded-2xl sm:p-6">
-                        <!-- Mobile: Simple List View -->
-                        <div class="sm:hidden">
-                            <div class="mb-3 flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <Crown class="h-4 w-4 text-blue-400" />
-                                    <span class="text-sm font-bold text-text-primary">
-                                        {{ isMyTurn ? 'Your Turn!' : `${currentTurnPlayer?.name || 'Waiting'}'s turn` }}
-                                    </span>
-                                </div>
-                                <span class="text-xs text-text-secondary">Turn {{ turnsPlayed }}</span>
-                            </div>
-                            <div class="mb-3 flex flex-wrap gap-2">
+                    <!-- Mobile: Word Card (Full Display) -->
+                    <div
+                        v-if="gameState.word && !gameResult"
+                        class="mb-3 rounded-2xl border-2 p-4 text-center sm:mb-4 sm:hidden"
+                        :class="gameState.is_impostor ? 'border-red-500/50 bg-red-950/20' : 'border-blue-500/50 bg-blue-950/20'"
+                    >
+                        <div
+                            class="mb-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tracking-wider uppercase"
+                            :class="
+                                gameState.is_impostor
+                                    ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
+                                    : 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30'
+                            "
+                        >
+                            <Skull v-if="gameState.is_impostor" class="h-3 w-3" />
+                            <Trophy v-else class="h-3 w-3" />
+                            {{ gameState.is_impostor ? 'You are the IMPOSTOR' : 'You are CREW' }}
+                        </div>
+                        <div
+                            class="text-2xl font-black tracking-wider uppercase"
+                            :class="gameState.is_impostor ? 'text-shadow-glow-red animate-pulse text-red-400' : 'text-shadow-glow-blue text-blue-400'"
+                        >
+                            {{ gameState.word }}
+                        </div>
+                    </div>
+
+                    <!-- Desktop: Full Word Display -->
+                    <div v-if="gameState.word && !gameResult" class="mb-4 hidden rounded-2xl border-2 p-6 text-center sm:block">
+                        <div
+                            class="relative overflow-hidden rounded-2xl border-2 p-6"
+                            :class="gameState.is_impostor ? 'border-red-500/50 bg-red-950/20' : 'border-blue-500/50 bg-blue-950/20'"
+                        >
+                            <div
+                                class="absolute inset-0 opacity-50"
+                                :class="gameState.is_impostor ? 'bg-gradient-to-br from-red-600/20 to-transparent' : 'bg-gradient-to-br from-blue-600/20 to-transparent'"
+                            ></div>
+                            <div class="relative z-10">
                                 <div
-                                    v-for="player in activePlayers"
-                                    :key="player.id"
-                                    class="flex items-center gap-1.5 rounded-lg px-2 py-1 transition-all duration-300"
-                                    :class="[
-                                        player.id === gameState.current_turn_player_id ? 'bg-blue-500/20 ring-1 ring-blue-500/30' : 'bg-void-hover',
-                                        player.id === endedTurnPlayerId ? 'ring-2 ring-green-500/80 ring-offset-2 ring-offset-void' : '',
-                                    ]"
+                                    class="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold tracking-wider uppercase"
+                                    :class="
+                                        gameState.is_impostor
+                                            ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
+                                            : 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30'
+                                    "
                                 >
+                                    <Skull v-if="gameState.is_impostor" class="h-4 w-4" />
+                                    <Trophy v-else class="h-4 w-4" />
+                                    {{ gameState.is_impostor ? 'You are the IMPOSTOR' : 'You are CREW' }}
+                                </div>
+                                <div
+                                    class="text-4xl font-black tracking-wider uppercase"
+                                    :class="gameState.is_impostor ? 'text-shadow-glow-red animate-pulse text-red-400' : 'text-shadow-glow-blue text-blue-400'"
+                                >
+                                    {{ gameState.word }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Turn Indicator / Voting Panel Container -->
+                    <div class="space-y-3 sm:space-y-4">
+                        <!-- Turn Indicator -->
+                        <div v-if="!gameResult && !votingPhase" class="glass-card rounded-xl p-3 sm:rounded-2xl sm:p-4">
+                            <!-- Mobile: Horizontal Scroll Player List -->
+                            <div class="sm:hidden">
+                                <!-- Current Turn Banner -->
+                                <div
+                                    class="mb-3 flex items-center justify-between rounded-xl px-3 py-2"
+                                    :class="isMyTurn ? 'bg-blue-500/20 ring-1 ring-blue-500/30' : 'bg-void-elevated'"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <Crown v-if="isMyTurn" class="h-4 w-4 text-blue-400" />
+                                        <span class="text-sm font-bold" :class="isMyTurn ? 'text-blue-300' : 'text-text-secondary'">
+                                            {{ isMyTurn ? 'Your Turn!' : `${currentTurnPlayer?.name || 'Waiting'}'s turn` }}
+                                        </span>
+                                    </div>
+                                    <span class="text-xs text-text-secondary">Turn {{ turnsPlayed }}</span>
+                                </div>
+
+                                <!-- Horizontal Player Scroll -->
+                                <div class="mb-3 flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
                                     <div
-                                        class="flex h-6 w-6 items-center justify-center overflow-hidden rounded-md text-xs font-bold"
+                                        v-for="player in activePlayers"
+                                        :key="player.id"
+                                        class="flex flex-shrink-0 flex-col items-center gap-1 rounded-xl p-2 transition-all"
                                         :class="[
                                             player.id === gameState.current_turn_player_id
-                                                ? 'bg-blue-500 text-white'
-                                                : 'bg-void-elevated text-text-secondary',
-                                            player.id === endedTurnPlayerId ? 'ring-2 ring-green-500' : '',
-                                        ]"
-                                    >
-                                        <img
-                                            v-if="player.avatar"
-                                            :src="avatarUrl(player.avatar)"
-                                            :alt="player.name"
-                                            class="h-full w-full object-cover"
-                                        />
-                                        <span v-else>{{ player.name.charAt(0).toUpperCase() }}</span>
-                                    </div>
-                                    <span class="max-w-[60px] truncate text-xs">{{ player.name }}</span>
-                                </div>
-                            </div>
-                            <button
-                                v-if="isMyTurn"
-                                @click="handleNextTurn"
-                                class="btn-primary w-full rounded-xl py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/30"
-                            >
-                                End My Turn
-                            </button>
-                        </div>
-
-                        <!-- Desktop: Circular View -->
-                        <div class="hidden sm:block">
-                            <div class="mb-4 flex justify-center">
-                                <div
-                                    class="rounded-full border border-void-border bg-void-elevated px-4 py-1.5 text-sm font-bold text-text-primary shadow-lg backdrop-blur-sm"
-                                >
-                                    <span class="text-text-secondary">Turns:</span>
-                                    <span class="ml-2 text-blue-400">{{ turnsPlayed }}</span>
-                                </div>
-                            </div>
-                            <div class="relative mx-auto w-full max-w-[340px]" style="height: 280px">
-                                <div
-                                    class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-void-border/50"
-                                    :style="{ width: `${RADIUS_PX * 2}px`, height: `${RADIUS_PX * 2}px` }"
-                                ></div>
-                                <!-- Arrow using SVG assets -->
-                                <div
-                                    v-if="currentTurnIndexInCircle >= 0 && circlePlayers.length > 0"
-                                    class="absolute top-1/2 left-1/2 z-10 origin-center -translate-x-1/2 -translate-y-1/2 transition-transform duration-500 ease-out"
-                                    :style="{ transform: `rotate(${arrowRotationDeg}deg)` }"
-                                >
-                                    <div
-                                        class="relative flex items-center"
-                                        :style="{ width: `${arrowLength + 20}px`, transform: `translateX(${CENTER_SIZE / 2 - 5}px)` }"
-                                    >
-                                        <!-- Shaft SVG -->
-                                        <img
-                                            src="/images/Shaft.svg"
-                                            class="h-3 w-full"
-                                            :class="isMyTurn ? 'brightness-125' : 'opacity-80'"
-                                            alt=""
-                                        />
-                                        <!-- Arrow Head SVG -->
-                                        <img
-                                            src="/images/Arrow_head.svg"
-                                            class="absolute -right-2 h-5 w-5 flex-shrink-0"
-                                            :class="isMyTurn ? 'brightness-125' : 'opacity-80'"
-                                            alt=""
-                                        />
-                                    </div>
-                                </div>
-                                <!-- Center using SVG -->
-                                <div class="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
-                                    <div class="relative flex h-14 w-14 items-center justify-center sm:h-16 sm:w-16">
-                                        <!-- Center SVG background -->
-                                        <img
-                                            src="/images/Center.svg"
-                                            class="absolute inset-0 h-full w-full"
-                                            :class="isMyTurn ? 'drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'opacity-90'"
-                                            alt=""
-                                        />
-                                        <div v-if="isMyTurn" class="absolute -inset-2 animate-ping rounded-full bg-blue-400/10"></div>
-                                        <div class="relative z-10 text-center">
-                                            <div class="text-lg leading-none font-black text-blue-400 sm:text-xl">
-                                                {{ currentTurnIndexInCircle >= 0 ? currentTurnIndexInCircle + 1 : '–' }}
-                                            </div>
-                                            <div class="text-[8px] font-medium tracking-wider text-text-tertiary">/{{ circlePlayers.length }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div
-                                    v-for="(player, index) in circlePlayers"
-                                    :key="player.id"
-                                    class="absolute z-30 -translate-x-1/2 -translate-y-1/2 transition-all duration-500"
-                                    :style="{
-                                        left: positionOnCircle(index, circlePlayers.length).left,
-                                        top: positionOnCircle(index, circlePlayers.length).top,
-                                    }"
-                                >
-                                    <div
-                                        class="flex flex-col items-center gap-1 transition-all duration-300"
-                                        :class="[
-                                            player.id === gameState.current_turn_player_id ? 'scale-110' : 'opacity-70 hover:opacity-100',
-                                            player.id === endedTurnPlayerId ? 'ring-2 ring-green-500 rounded-xl ring-offset-2 ring-offset-void' : '',
+                                                ? 'bg-blue-500/20 ring-1 ring-blue-500/30'
+                                                : 'bg-void-elevated',
+                                            player.id === endedTurnPlayerId ? 'ring-2 ring-green-500/50' : '',
                                         ]"
                                     >
                                         <div
-                                            class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg text-xs font-bold shadow-lg transition-all duration-300 sm:h-10 sm:w-10 sm:text-sm"
+                                            class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-xs font-bold"
                                             :class="[
                                                 player.id === gameState.current_turn_player_id
-                                                    ? 'bg-blue-500 text-white ring-2 shadow-blue-500/40 ring-white/50'
+                                                    ? 'bg-blue-500 text-white'
                                                     : 'bg-void-hover text-text-secondary',
-                                                player.id === current_player.id ? 'ring-offset-void ring-2 ring-blue-400 ring-offset-2' : '',
-                                                player.id === endedTurnPlayerId ? 'ring-2 ring-green-500 ring-offset-1 ring-offset-void' : '',
+                                                player.id === endedTurnPlayerId ? 'ring-2 ring-green-500' : '',
                                             ]"
                                         >
                                             <img
@@ -801,277 +721,535 @@ onUnmounted(() => {
                                             />
                                             <span v-else>{{ player.name.charAt(0).toUpperCase() }}</span>
                                         </div>
-                                        <span
-                                            class="max-w-[60px] truncate rounded-full bg-void-elevated px-1.5 py-0.5 text-center text-[9px] font-bold shadow-lg backdrop-blur-sm"
-                                            :class="
-                                                player.id === gameState.current_turn_player_id ? 'bg-void-hover text-blue-400' : 'text-text-secondary'
-                                            "
-                                        >
-                                            {{ player.name.length > 5 ? player.name.slice(0, 4) + '…' : player.name }}
-                                        </span>
+                                        <span class="max-w-[60px] truncate text-[10px] text-text-secondary">{{ player.name }}</span>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mt-4 flex flex-col items-center gap-3">
-                                <div
-                                    class="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-bold transition-all duration-300"
-                                    :class="[
-                                        isMyTurn
-                                            ? 'scale-105 border border-blue-500/50 bg-blue-500/20 text-blue-300 shadow-lg shadow-blue-500/20'
-                                            : 'border border-void-border bg-void-elevated text-text-secondary',
-                                    ]"
-                                >
-                                    <template v-if="isMyTurn">
-                                        <Crown class="h-4 w-4 text-blue-400" />
-                                        <span>Your Turn!</span>
-                                    </template>
-                                    <template v-else-if="currentTurnPlayer">
-                                        <span class="text-text-secondary">{{ currentTurnPlayer.name }}'s turn</span>
-                                    </template>
-                                    <template v-else>
-                                        <span>Waiting...</span>
-                                    </template>
-                                </div>
+
+                                <!-- End Turn Button -->
                                 <button
                                     v-if="isMyTurn"
                                     @click="handleNextTurn"
-                                    class="btn-primary group flex items-center justify-center gap-2 rounded-xl px-8 py-3 text-base font-bold text-white shadow-xl shadow-blue-500/30 transition-all hover:scale-105 hover:shadow-blue-500/50 active:scale-95"
+                                    class="btn-primary w-full rounded-xl py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30"
                                 >
                                     End My Turn
-                                    <ChevronLeft class="h-5 w-5 rotate-180 transition-transform group-hover:translate-x-1" />
                                 </button>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Voting Panel -->
-                    <div v-else-if="votingPhase" class="glass-card rounded-xl p-3 sm:rounded-2xl sm:p-6">
-                        <div class="mb-3 flex items-center justify-between sm:mb-4">
-                            <div class="flex items-center gap-2">
-                                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/20 sm:h-10 sm:w-10 sm:rounded-xl">
-                                    <Target class="h-3.5 w-3.5 text-red-400 sm:h-5 sm:w-5" />
+                            <!-- Desktop: Circular View -->
+                            <div class="hidden sm:block">
+                                <div class="mb-4 flex justify-center">
+                                    <div
+                                        class="rounded-full border border-void-border bg-void-elevated px-4 py-1.5 text-sm font-bold text-text-primary shadow-lg backdrop-blur-sm"
+                                    >
+                                        <span class="text-text-secondary">Turns:</span>
+                                        <span class="ml-2 text-blue-400">{{ turnsPlayed }}</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 class="text-sm font-bold text-text-primary sm:text-lg">Vote to Eliminate</h3>
-                                    <p class="text-xs text-text-secondary">{{ voteStats.votesCast }}/{{ voteStats.totalVoters }} voted</p>
-                                </div>
-                            </div>
-                            <span
-                                v-if="hasVotedElimination"
-                                class="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-bold text-blue-400 ring-1 ring-blue-500/30"
-                            >
-                                Voted
-                            </span>
-                        </div>
-
-                        <div
-                            v-if="hasVotedElimination && myVoteTarget !== undefined"
-                            class="mb-3 rounded-lg bg-blue-500/10 p-2 text-center ring-1 ring-blue-500/20 sm:mb-4 sm:rounded-xl sm:p-3"
-                        >
-                            <p class="text-xs text-text-secondary sm:text-sm">
-                                You voted to
-                                <span class="font-bold" :class="myVoteTarget === null ? 'text-blue-400' : 'text-red-400'">
-                                    {{ myVoteTarget === null ? 'SKIP' : 'eliminate ' + gameState.players.find((p) => p.id === myVoteTarget)?.name }}
-                                </span>
-                            </p>
-                        </div>
-
-                        <div class="mb-3 grid grid-cols-2 gap-2 sm:mb-4 sm:grid-cols-3 sm:gap-4">
-                            <div
-                                v-for="player in activePlayers"
-                                :key="player.id"
-                                class="relative rounded-lg p-2 transition-all sm:rounded-xl sm:p-4"
-                                :class="[
-                                    selectedPlayerId === player.id && !hasVotedElimination
-                                        ? 'cursor-pointer bg-red-600 text-white shadow-lg shadow-red-500/30'
-                                        : 'glass-light',
-                                    hasVotedElimination && myVoteTarget !== player.id
-                                        ? 'cursor-default opacity-70'
-                                        : 'cursor-pointer hover:bg-void-hover',
-                                    myVoteTarget === player.id ? 'ring-2 ring-red-500' : '',
-                                ]"
-                                @click="!hasVotedElimination && voteForPlayer(player.id)"
-                            >
-                                <div class="flex items-center gap-2 sm:gap-3">
-                                    <div class="relative h-10 w-10 flex-shrink-0 sm:h-14 sm:w-14">
-                                        <svg class="h-full w-full -rotate-90" viewBox="0 0 36 36">
-                                            <path
-                                                class="text-void-hover"
-                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="3"
+                                <div class="relative mx-auto w-full max-w-[340px]" style="height: 280px">
+                                    <div
+                                        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-void-border/50"
+                                        :style="{ width: `${RADIUS_PX * 2}px`, height: `${RADIUS_PX * 2}px` }"
+                                    ></div>
+                                    <!-- Arrow using SVG assets -->
+                                    <div
+                                        v-if="currentTurnIndexInCircle >= 0 && circlePlayers.length > 0"
+                                        class="absolute top-1/2 left-1/2 z-10 origin-center -translate-x-1/2 -translate-y-1/2 transition-transform duration-500 ease-out"
+                                        :style="{ transform: `rotate(${arrowRotationDeg}deg)` }"
+                                    >
+                                        <div
+                                            class="relative flex items-center"
+                                            :style="{ width: `${arrowLength + 20}px`, transform: `translateX(${CENTER_SIZE / 2 - 5}px)` }"
+                                        >
+                                            <img
+                                                src="/images/Shaft.svg"
+                                                class="h-3 w-full"
+                                                :class="isMyTurn ? 'brightness-125' : 'opacity-80'"
+                                                alt=""
                                             />
-                                            <path
-                                                class="transition-all duration-500"
-                                                :class="selectedPlayerId === player.id && !hasVotedElimination ? 'text-white' : 'text-blue-500'"
-                                                :stroke-dasharray="`${getDonutProgress(getPlayerVoteCount(player.id))}, 100`"
-                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="3"
+                                            <img
+                                                src="/images/Arrow_head.svg"
+                                                class="absolute -right-2 h-5 w-5 flex-shrink-0"
+                                                :class="isMyTurn ? 'brightness-125' : 'opacity-80'"
+                                                alt=""
                                             />
-                                        </svg>
-                                        <div class="absolute inset-0 flex items-center justify-center p-1">
-                                            <div class="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-void sm:h-9 sm:w-9">
+                                        </div>
+                                    </div>
+                                    <!-- Center using SVG -->
+                                    <div class="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
+                                        <div class="relative flex h-14 w-14 items-center justify-center sm:h-16 sm:w-16">
+                                            <img
+                                                src="/images/Center.svg"
+                                                class="absolute inset-0 h-full w-full"
+                                                :class="isMyTurn ? 'drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'opacity-90'"
+                                                alt=""
+                                            />
+                                            <div v-if="isMyTurn" class="absolute -inset-2 animate-ping rounded-full bg-blue-400/10"></div>
+                                            <div class="relative z-10 text-center">
+                                                <div class="text-lg leading-none font-black text-blue-400 sm:text-xl">
+                                                    {{ currentTurnIndexInCircle >= 0 ? currentTurnIndexInCircle + 1 : '–' }}
+                                                </div>
+                                                <div class="text-[8px] font-medium tracking-wider text-text-tertiary">/{{ circlePlayers.length }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        v-for="(player, index) in circlePlayers"
+                                        :key="player.id"
+                                        class="absolute z-30 -translate-x-1/2 -translate-y-1/2 transition-all duration-500"
+                                        :style="{
+                                            left: positionOnCircle(index, circlePlayers.length).left,
+                                            top: positionOnCircle(index, circlePlayers.length).top,
+                                        }"
+                                    >
+                                        <div
+                                            class="flex flex-col items-center gap-1 transition-all duration-300"
+                                            :class="[
+                                                player.id === gameState.current_turn_player_id ? 'scale-110' : 'opacity-70 hover:opacity-100',
+                                                player.id === endedTurnPlayerId ? 'ring-2 ring-green-500 rounded-xl ring-offset-2 ring-offset-void' : '',
+                                            ]"
+                                        >
+                                            <div
+                                                class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg text-xs font-bold shadow-lg transition-all duration-300 sm:h-10 sm:w-10 sm:text-sm"
+                                                :class="[
+                                                    player.id === gameState.current_turn_player_id
+                                                        ? 'bg-blue-500 text-white ring-2 shadow-blue-500/40 ring-white/50'
+                                                        : 'bg-void-hover text-text-secondary',
+                                                    player.id === current_player.id ? 'ring-offset-void ring-2 ring-blue-400 ring-offset-2' : '',
+                                                    player.id === endedTurnPlayerId ? 'ring-2 ring-green-500 ring-offset-1 ring-offset-void' : '',
+                                                ]"
+                                            >
                                                 <img
                                                     v-if="player.avatar"
                                                     :src="avatarUrl(player.avatar)"
                                                     :alt="player.name"
                                                     class="h-full w-full object-cover"
                                                 />
-                                                <span v-else class="text-[10px] font-bold sm:text-xs">{{ getPlayerVoteCount(player.id) }}</span>
+                                                <span v-else>{{ player.name.charAt(0).toUpperCase() }}</span>
+                                            </div>
+                                            <span
+                                                class="max-w-[60px] truncate rounded-full bg-void-elevated px-1.5 py-0.5 text-center text-[9px] font-bold shadow-lg backdrop-blur-sm"
+                                                :class="player.id === gameState.current_turn_player_id ? 'bg-void-hover text-blue-400' : 'text-text-secondary'"
+                                            >
+                                                {{ player.name.length > 5 ? player.name.slice(0, 4) + '…' : player.name }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex flex-col items-center gap-3">
+                                    <div
+                                        class="inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-bold transition-all duration-300"
+                                        :class="[
+                                            isMyTurn
+                                                ? 'scale-105 border border-blue-500/50 bg-blue-500/20 text-blue-300 shadow-lg shadow-blue-500/20'
+                                                : 'border border-void-border bg-void-elevated text-text-secondary',
+                                        ]"
+                                    >
+                                        <template v-if="isMyTurn">
+                                            <Crown class="h-4 w-4 text-blue-400" />
+                                            <span>Your Turn!</span>
+                                        </template>
+                                        <template v-else-if="currentTurnPlayer">
+                                            <span class="text-text-secondary">{{ currentTurnPlayer.name }}'s turn</span>
+                                        </template>
+                                        <template v-else>
+                                            <span>Waiting...</span>
+                                        </template>
+                                    </div>
+                                    <button
+                                        v-if="isMyTurn"
+                                        @click="handleNextTurn"
+                                        class="btn-primary group flex items-center justify-center gap-2 rounded-xl px-8 py-3 text-base font-bold text-white shadow-xl shadow-blue-500/30 transition-all hover:scale-105 hover:shadow-blue-500/50 active:scale-95"
+                                    >
+                                        End My Turn
+                                        <ChevronLeft class="h-5 w-5 rotate-180 transition-transform group-hover:translate-x-1" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Voting Panel -->
+                        <div v-else-if="votingPhase" class="glass-card rounded-xl p-3 sm:rounded-2xl sm:p-4">
+                            <div class="mb-3 flex items-center justify-between sm:mb-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-red-500/20 sm:h-10 sm:w-10 sm:rounded-xl">
+                                        <Target class="h-3.5 w-3.5 text-red-400 sm:h-5 sm:w-5" />
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-text-primary sm:text-lg">Vote to Eliminate</h3>
+                                        <p class="text-xs text-text-secondary">{{ voteStats.votesCast }}/{{ voteStats.totalVoters }} voted</p>
+                                    </div>
+                                </div>
+                                <span
+                                    v-if="hasVotedElimination"
+                                    class="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-bold text-blue-400 ring-1 ring-blue-500/30"
+                                >
+                                    Voted
+                                </span>
+                            </div>
+
+                            <div
+                                v-if="hasVotedElimination && myVoteTarget !== undefined"
+                                class="mb-3 rounded-lg bg-blue-500/10 p-2 text-center ring-1 ring-blue-500/20 sm:mb-4 sm:rounded-xl sm:p-3"
+                            >
+                                <p class="text-xs text-text-secondary sm:text-sm">
+                                    You voted to
+                                    <span class="font-bold" :class="myVoteTarget === null ? 'text-blue-400' : 'text-red-400'">
+                                        {{ myVoteTarget === null ? 'SKIP' : 'eliminate ' + gameState.players.find((p) => p.id === myVoteTarget)?.name }}
+                                    </span>
+                                </p>
+                            </div>
+
+                            <!-- Mobile: Vertical Voting List -->
+                            <div class="mb-3 space-y-2 sm:hidden">
+                                <div
+                                    v-for="player in activePlayers"
+                                    :key="player.id"
+                                    class="flex items-center gap-3 rounded-xl p-2 transition-all"
+                                    :class="[
+                                        selectedPlayerId === player.id && !hasVotedElimination
+                                            ? 'bg-red-600 text-white'
+                                            : 'glass-light',
+                                        hasVotedElimination && myVoteTarget !== player.id ? 'opacity-70' : '',
+                                        myVoteTarget === player.id ? 'ring-2 ring-red-500' : '',
+                                    ]"
+                                    @click="!hasVotedElimination && voteForPlayer(player.id)"
+                                >
+                                    <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-void">
+                                        <img
+                                            v-if="player.avatar"
+                                            :src="avatarUrl(player.avatar)"
+                                            :alt="player.name"
+                                            class="h-full w-full object-cover"
+                                        />
+                                        <span v-else class="text-sm font-bold">{{ player.name.charAt(0).toUpperCase() }}</span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-bold">{{ player.name }}</p>
+                                        <p class="text-xs opacity-70">{{ getPlayerVoteCount(player.id) }}/{{ voteStats.totalVoters }} votes</p>
+                                    </div>
+                                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-void/50">
+                                        <span class="text-sm font-bold">{{ getPlayerVoteCount(player.id) }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Skip Option -->
+                                <div
+                                    class="flex items-center gap-3 rounded-xl p-2 transition-all"
+                                    :class="[
+                                        selectedSkip && !hasVotedElimination ? 'bg-blue-600 text-white' : 'glass-light',
+                                        hasVotedElimination && myVoteTarget !== null ? 'opacity-70' : '',
+                                        myVoteTarget === null ? 'ring-2 ring-blue-500' : '',
+                                    ]"
+                                    @click="!hasVotedElimination && voteForSkip()"
+                                >
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20">
+                                        <X class="h-5 w-5 text-blue-400" />
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-bold">Skip Vote</p>
+                                        <p class="text-xs opacity-70">{{ voteStats.skipVotes }}/{{ voteStats.totalVoters }} votes</p>
+                                    </div>
+                                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-void/50">
+                                        <span class="text-sm font-bold">{{ voteStats.skipVotes }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Desktop: Grid Voting -->
+                            <div class="mb-3 hidden grid-cols-2 gap-2 sm:grid sm:mb-4 sm:grid-cols-3 sm:gap-4">
+                                <div
+                                    v-for="player in activePlayers"
+                                    :key="player.id"
+                                    class="relative rounded-lg p-2 transition-all sm:rounded-xl sm:p-4"
+                                    :class="[
+                                        selectedPlayerId === player.id && !hasVotedElimination
+                                            ? 'cursor-pointer bg-red-600 text-white shadow-lg shadow-red-500/30'
+                                            : 'glass-light',
+                                        hasVotedElimination && myVoteTarget !== player.id ? 'cursor-default opacity-70' : 'cursor-pointer hover:bg-void-hover',
+                                        myVoteTarget === player.id ? 'ring-2 ring-red-500' : '',
+                                    ]"
+                                    @click="!hasVotedElimination && voteForPlayer(player.id)"
+                                >
+                                    <div class="flex items-center gap-2 sm:gap-3">
+                                        <div class="relative h-10 w-10 flex-shrink-0 sm:h-14 sm:w-14">
+                                            <svg class="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                                                <path
+                                                    class="text-void-hover"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="3"
+                                                />
+                                                <path
+                                                    class="transition-all duration-500"
+                                                    :class="selectedPlayerId === player.id && !hasVotedElimination ? 'text-white' : 'text-blue-500'"
+                                                    :stroke-dasharray="`${getDonutProgress(getPlayerVoteCount(player.id))}, 100`"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="3"
+                                                />
+                                            </svg>
+                                            <div class="absolute inset-0 flex items-center justify-center p-1">
+                                                <div class="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-void sm:h-9 sm:w-9">
+                                                    <img
+                                                        v-if="player.avatar"
+                                                        :src="avatarUrl(player.avatar)"
+                                                        :alt="player.name"
+                                                        class="h-full w-full object-cover"
+                                                    />
+                                                    <span v-else class="text-[10px] font-bold sm:text-xs">{{ getPlayerVoteCount(player.id) }}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <p
-                                            class="truncate text-xs font-bold sm:text-sm"
-                                            :class="selectedPlayerId === player.id && !hasVotedElimination ? 'text-white' : 'text-text-primary'"
-                                        >
-                                            {{ player.name }}
-                                        </p>
-                                        <p
-                                            class="text-[10px] sm:text-xs"
-                                            :class="selectedPlayerId === player.id && !hasVotedElimination ? 'text-white/70' : 'text-text-tertiary'"
-                                        >
-                                            {{ getPlayerVoteCount(player.id) }}/{{ voteStats.totalVoters }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div v-if="myVoteTarget === player.id" class="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
-                                    <Check class="h-3.5 w-3.5 text-red-400 sm:h-4 sm:w-4" />
-                                </div>
-                            </div>
-
-                            <div
-                                class="relative rounded-lg p-2 transition-all sm:rounded-xl sm:p-4"
-                                :class="[
-                                    selectedSkip && !hasVotedElimination
-                                        ? 'cursor-pointer bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                                        : 'glass-light',
-                                    hasVotedElimination && myVoteTarget !== null ? 'cursor-default opacity-70' : 'cursor-pointer hover:bg-void-hover',
-                                    myVoteTarget === null ? 'ring-2 ring-blue-500' : '',
-                                ]"
-                                @click="!hasVotedElimination && voteForSkip()"
-                            >
-                                <div class="flex items-center gap-2 sm:gap-3">
-                                    <div class="relative h-10 w-10 flex-shrink-0 sm:h-14 sm:w-14">
-                                        <svg class="h-full w-full -rotate-90" viewBox="0 0 36 36">
-                                            <path
-                                                class="text-void-hover"
-                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="3"
-                                            />
-                                            <path
-                                                class="transition-all duration-500"
-                                                :class="selectedSkip && !hasVotedElimination ? 'text-white' : 'text-blue-500'"
-                                                :stroke-dasharray="`${getDonutProgress(voteStats.skipVotes)}, 100`"
-                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="3"
-                                            />
-                                        </svg>
-                                        <div class="absolute inset-0 flex items-center justify-center">
-                                            <span class="text-xs font-bold sm:text-sm">{{ voteStats.skipVotes }}</span>
+                                        <div class="min-w-0 flex-1">
+                                            <p
+                                                class="truncate text-xs font-bold sm:text-sm"
+                                                :class="selectedPlayerId === player.id && !hasVotedElimination ? 'text-white' : 'text-text-primary'"
+                                            >
+                                                {{ player.name }}
+                                            </p>
+                                            <p
+                                                class="text-[10px] sm:text-xs"
+                                                :class="selectedPlayerId === player.id && !hasVotedElimination ? 'text-white/70' : 'text-text-tertiary'"
+                                            >
+                                                {{ getPlayerVoteCount(player.id) }}/{{ voteStats.totalVoters }}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div class="min-w-0 flex-1">
+                                    <div v-if="myVoteTarget === player.id" class="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
+                                        <Check class="h-3.5 w-3.5 text-red-400 sm:h-4 sm:w-4" />
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="relative rounded-lg p-2 transition-all sm:rounded-xl sm:p-4"
+                                    :class="[
+                                        selectedSkip && !hasVotedElimination
+                                            ? 'cursor-pointer bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                                            : 'glass-light',
+                                        hasVotedElimination && myVoteTarget !== null ? 'cursor-default opacity-70' : 'cursor-pointer hover:bg-void-hover',
+                                        myVoteTarget === null ? 'ring-2 ring-blue-500' : '',
+                                    ]"
+                                    @click="!hasVotedElimination && voteForSkip()"
+                                >
+                                    <div class="flex items-center gap-2 sm:gap-3">
+                                        <div class="relative h-10 w-10 flex-shrink-0 sm:h-14 sm:w-14">
+                                            <svg class="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                                                <path
+                                                    class="text-void-hover"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="3"
+                                                />
+                                                <path
+                                                    class="transition-all duration-500"
+                                                    :class="selectedSkip && !hasVotedElimination ? 'text-white' : 'text-blue-500'"
+                                                    :stroke-dasharray="`${getDonutProgress(voteStats.skipVotes)}, 100`"
+                                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="3"
+                                                />
+                                            </svg>
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <span class="text-xs font-bold sm:text-sm">{{ voteStats.skipVotes }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p
+                                                class="text-xs font-bold sm:text-sm"
+                                                :class="selectedSkip && !hasVotedElimination ? 'text-white' : 'text-text-primary'"
+                                            >
+                                                Skip
+                                            </p>
+                                            <p
+                                                class="text-[10px] sm:text-xs"
+                                                :class="selectedSkip && !hasVotedElimination ? 'text-white/70' : 'text-text-tertiary'"
+                                            >
+                                                {{ voteStats.skipVotes }}/{{ voteStats.totalVoters }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div v-if="myVoteTarget === null && hasVotedElimination" class="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
+                                        <Check class="h-3.5 w-3.5 text-blue-400 sm:h-4 sm:w-4" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button
+                                    v-if="!hasVotedElimination"
+                                    @click="submitVote"
+                                    :disabled="selectedPlayerId === null && !selectedSkip"
+                                    class="btn-danger-filled flex-1 rounded-lg py-2.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 sm:rounded-xl sm:py-3 sm:text-sm"
+                                >
+                                    Lock In Vote
+                                </button>
+                                <button
+                                    v-if="!hasVotedElimination"
+                                    @click="submitSkipVote"
+                                    class="btn-glass rounded-lg px-3 py-2.5 text-xs font-bold text-text-secondary hover:text-text-primary sm:rounded-xl sm:px-6 sm:text-sm"
+                                >
+                                    Skip
+                                </button>
+                                <div
+                                    v-else
+                                    class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600/20 py-2.5 text-xs font-bold text-blue-400 ring-1 ring-blue-500/30 sm:rounded-xl sm:py-3 sm:text-sm"
+                                >
+                                    <Check class="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    Vote Locked
+                                </div>
+                                <button
+                                    v-if="current_player?.is_host"
+                                    @click="endVotingPhase"
+                                    class="btn-secondary rounded-lg px-3 py-2.5 text-xs font-bold sm:rounded-xl sm:px-6 sm:text-sm"
+                                >
+                                    End
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Elimination Reveal -->
+                        <Transition name="bounce">
+                            <div
+                                v-if="showImpostorReveal && eliminatedPlayer"
+                                class="glass rounded-lg border-2 p-3 sm:rounded-2xl sm:p-4"
+                                :class="eliminatedPlayer.is_impostor ? 'border-blue-500/50 bg-blue-900/20' : 'border-red-500/50 bg-red-900/20'"
+                            >
+                                <div class="flex items-center gap-3 sm:gap-4">
+                                    <div
+                                        class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg sm:h-14 sm:w-14 sm:rounded-2xl"
+                                        :class="eliminatedPlayer.is_impostor ? 'bg-blue-500/20' : 'bg-red-500/20'"
+                                    >
+                                        <component
+                                            :is="eliminatedPlayer.is_impostor ? Check : X"
+                                            class="h-5 w-5 sm:h-8 sm:w-8"
+                                            :class="eliminatedPlayer.is_impostor ? 'text-blue-400' : 'text-red-400'"
+                                        />
+                                    </div>
+                                    <div>
+                                        <h3 class="text-sm font-black text-text-primary sm:text-lg">Elimination Result</h3>
                                         <p
-                                            class="text-xs font-bold sm:text-sm"
-                                            :class="selectedSkip && !hasVotedElimination ? 'text-white' : 'text-text-primary'"
+                                            class="text-xs font-bold sm:text-base"
+                                            :class="eliminatedPlayer.is_impostor ? 'text-blue-400' : 'text-red-400'"
                                         >
-                                            Skip
+                                            {{ eliminatedPlayer.is_impostor ? 'THE IMPOSTOR!' : 'Not the impostor!' }}
                                         </p>
-                                        <p
-                                            class="text-[10px] sm:text-xs"
-                                            :class="selectedSkip && !hasVotedElimination ? 'text-white/70' : 'text-text-tertiary'"
-                                        >
-                                            {{ voteStats.skipVotes }}/{{ voteStats.totalVoters }}
+                                        <p class="text-xs text-text-secondary sm:text-sm">
+                                            {{ eliminatedPlayer.name }} was
+                                            {{ eliminatedPlayer.is_impostor ? 'eliminated. Innocent wins!' : 'eliminated. Game continues...' }}
                                         </p>
                                     </div>
                                 </div>
-                                <div v-if="myVoteTarget === null && hasVotedElimination" class="absolute top-1.5 right-1.5 sm:top-2 sm:right-2">
-                                    <Check class="h-3.5 w-3.5 text-blue-400 sm:h-4 sm:w-4" />
-                                </div>
                             </div>
-                        </div>
+                        </Transition>
+                    </div>
+                </div>
 
-                        <div class="flex gap-2">
-                            <button
-                                v-if="!hasVotedElimination"
-                                @click="submitVote"
-                                :disabled="selectedPlayerId === null && !selectedSkip"
-                                class="btn-danger-filled flex-1 rounded-lg py-2.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 sm:rounded-xl sm:py-4 sm:text-sm"
-                            >
-                                Lock In Vote
-                            </button>
-                            <button
-                                v-if="!hasVotedElimination"
-                                @click="submitSkipVote"
-                                class="btn-glass rounded-lg px-3 py-2.5 text-xs font-bold text-text-secondary hover:text-text-primary sm:rounded-xl sm:px-6 sm:text-sm"
-                            >
-                                Skip
-                            </button>
-                            <div
-                                v-else
-                                class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600/20 py-2.5 text-xs font-bold text-blue-400 ring-1 ring-blue-500/30 sm:rounded-xl sm:py-4 sm:text-sm"
-                            >
-                                <Check class="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                Vote Locked
-                            </div>
-                            <button
-                                v-if="current_player?.is_host"
-                                @click="endVotingPhase"
-                                class="btn-secondary rounded-lg px-3 py-2.5 text-xs font-bold sm:rounded-xl sm:px-6 sm:text-sm"
-                            >
-                                End
-                            </button>
-                        </div>
+                <!-- Mobile: Bottom Action Bar -->
+                <div
+                    v-if="!gameResult && !votingPhase"
+                    class="glass flex-shrink-0 border-t border-void-border p-2 md:hidden"
+                >
+                    <!-- Quick Vote Now / Reroll Buttons -->
+                    <div class="mb-2 flex gap-2">
+                        <button
+                            @click="handleVoteNow"
+                            :disabled="gameState.vote_now.has_voted || currentPlayerData?.is_eliminated"
+                            class="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition-all"
+                            :class="
+                                gameState.vote_now.has_voted
+                                    ? 'cursor-not-allowed bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30'
+                                    : 'glass-light text-text-primary active:bg-red-500/20'
+                            "
+                        >
+                            <Swords class="h-3.5 w-3.5" />
+                            <span>Vote Now</span>
+                            <span class="ml-1 rounded-full bg-void-elevated px-1.5 py-0.5 text-[10px]">
+                                {{ gameState.vote_now.count }}/{{ gameState.vote_now.threshold }}
+                            </span>
+                        </button>
+                        <button
+                            @click="handleVoteReroll"
+                            :disabled="gameState.reroll.has_voted || currentPlayerData?.is_eliminated"
+                            class="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition-all"
+                            :class="
+                                gameState.reroll.has_voted
+                                    ? 'cursor-not-allowed bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30'
+                                    : 'glass-light text-text-primary active:bg-blue-500/20'
+                            "
+                        >
+                            <RefreshCw class="h-3.5 w-3.5" />
+                            <span>Reroll</span>
+                            <span class="ml-1 rounded-full bg-void-elevated px-1.5 py-0.5 text-[10px]">
+                                {{ gameState.reroll.count }}/{{ gameState.reroll.threshold }}
+                            </span>
+                        </button>
                     </div>
 
-                    <!-- Elimination Reveal -->
-                    <Transition name="bounce">
-                        <div
-                            v-if="showImpostorReveal && eliminatedPlayer"
-                            class="glass rounded-lg border-2 p-3 sm:rounded-2xl sm:p-6"
-                            :class="eliminatedPlayer.is_impostor ? 'border-blue-500/50 bg-blue-900/20' : 'border-red-500/50 bg-red-900/20'"
-                        >
-                            <div class="flex items-center gap-3 sm:gap-4">
-                                <div
-                                    class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg sm:h-16 sm:w-16 sm:rounded-2xl"
-                                    :class="eliminatedPlayer.is_impostor ? 'bg-blue-500/20' : 'bg-red-500/20'"
-                                >
-                                    <component
-                                        :is="eliminatedPlayer.is_impostor ? Check : X"
-                                        class="h-5 w-5 sm:h-8 sm:w-8"
-                                        :class="eliminatedPlayer.is_impostor ? 'text-blue-400' : 'text-red-400'"
-                                    />
-                                </div>
-                                <div>
-                                    <h3 class="text-sm font-black text-text-primary sm:text-xl">Elimination Result</h3>
-                                    <p
-                                        class="text-xs font-bold sm:text-base"
-                                        :class="eliminatedPlayer.is_impostor ? 'text-blue-400' : 'text-red-400'"
-                                    >
-                                        {{ eliminatedPlayer.is_impostor ? 'THE IMPOSTOR!' : 'Not the impostor!' }}
-                                    </p>
-                                    <p class="text-xs text-text-secondary sm:text-sm">
-                                        {{ eliminatedPlayer.name }} was
-                                        {{ eliminatedPlayer.is_impostor ? 'eliminated. Innocent wins!' : 'eliminated. Game continues...' }}
-                                    </p>
-                                </div>
-                            </div>
+                    <!-- Progress Bars -->
+                    <div class="flex gap-2">
+                        <div class="h-1 flex-1 overflow-hidden rounded-full bg-void-hover">
+                            <div
+                                class="h-full rounded-full bg-gradient-to-r from-red-500 to-red-400 transition-all"
+                                :style="{ width: `${gameState.vote_now.progress}%` }"
+                            ></div>
                         </div>
-                    </Transition>
+                        <div class="h-1 flex-1 overflow-hidden rounded-full bg-void-hover">
+                            <div
+                                class="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all"
+                                :style="{ width: `${gameState.reroll.progress}%` }"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile: Main Bottom Navigation -->
+                <div class="glass flex-shrink-0 border-t border-void-border px-2 py-1 md:hidden">
+                    <div class="flex items-center justify-around">
+                        <!-- Players Button -->
+                        <button
+                            @click="showPlayersDrawer = true"
+                            class="flex flex-col items-center gap-0.5 rounded-lg p-2 transition-colors"
+                            :class="showPlayersDrawer ? 'text-blue-400' : 'text-text-secondary'"
+                        >
+                            <div class="relative">
+                                <Users class="h-5 w-5" />
+                                <span
+                                    class="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-blue-500 text-[8px] font-bold text-white"
+                                >
+                                    {{ activePlayers.length }}
+                                </span>
+                            </div>
+                            <span class="text-[10px] font-medium">Players</span>
+                        </button>
+
+                        <!-- Chat Button -->
+                        <button
+                            @click="showChat = true"
+                            class="flex flex-col items-center gap-0.5 rounded-lg p-2 transition-colors"
+                            :class="showChat ? 'text-blue-400' : 'text-text-secondary'"
+                        >
+                            <div class="relative">
+                                <MessageSquare class="h-5 w-5" />
+                                <span
+                                    v-if="unread_dm_count > 0"
+                                    class="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white"
+                                >
+                                    {{ unread_dm_count }}
+                                </span>
+                            </div>
+                            <span class="text-[10px] font-medium">Chat</span>
+                        </button>
+                    </div>
                 </div>
             </section>
 
-            <!-- Right Sidebar -->
+            <!-- Right Sidebar (Desktop) -->
             <aside class="hidden w-[260px] flex-shrink-0 flex-col border-l border-void-border bg-void-elevated/30 md:flex lg:w-72">
+                <!-- Actions Section -->
                 <div v-if="!votingPhase && !gameResult" class="border-b border-void-border p-3">
                     <h3 class="mb-2 text-xs font-bold tracking-wider text-text-secondary uppercase">Actions</h3>
                     <div class="space-y-2">
@@ -1139,6 +1317,7 @@ onUnmounted(() => {
                     </div>
                 </div>
 
+                <!-- Players List -->
                 <div class="flex flex-1 flex-col overflow-hidden p-3">
                     <h3 class="mb-2 text-xs font-bold tracking-wider text-text-secondary uppercase">Players ({{ activePlayers.length }} alive)</h3>
                     <div class="flex-1 space-y-1.5 overflow-y-auto">
@@ -1179,6 +1358,7 @@ onUnmounted(() => {
                     </div>
                 </div>
 
+                <!-- Status Footer -->
                 <div class="border-t border-void-border p-3">
                     <div class="flex items-center justify-between rounded-lg bg-void-hover p-2.5">
                         <div class="flex items-center gap-2">
@@ -1197,6 +1377,108 @@ onUnmounted(() => {
                 </div>
             </aside>
         </main>
+
+        <!-- Mobile: Players Drawer (Bottom Sheet) -->
+        <Transition name="slide-up">
+            <div
+                v-if="showPlayersDrawer"
+                class="fixed inset-0 z-50 md:hidden"
+                @click.self="showPlayersDrawer = false"
+            >
+                <!-- Backdrop -->
+                <div class="absolute inset-0 bg-black/50" @click="showPlayersDrawer = false"></div>
+                
+                <!-- Sheet -->
+                <div class="absolute bottom-0 left-0 right-0 glass-card rounded-t-2xl border-t border-void-border">
+                    <!-- Handle -->
+                    <div class="flex justify-center py-2" @click="showPlayersDrawer = false">
+                        <div class="h-1 w-12 rounded-full bg-void-border"></div>
+                    </div>
+                    
+                    <!-- Header -->
+                    <div class="flex items-center justify-between border-b border-void-border px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <Users class="h-5 w-5 text-blue-400" />
+                            <span class="font-bold text-text-primary">Players</span>
+                            <span class="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
+                                {{ activePlayers.length }} alive
+                            </span>
+                        </div>
+                        <button @click="showPlayersDrawer = false" class="btn-glass rounded-lg p-2">
+                            <ChevronDown class="h-5 w-5" />
+                        </button>
+                    </div>
+                    
+                    <!-- Player List -->
+                    <div class="max-h-[60vh] overflow-y-auto p-3">
+                        <!-- Active Players -->
+                        <div class="mb-3">
+                            <h4 class="mb-2 text-xs font-bold uppercase text-text-secondary">Active Players</h4>
+                            <div class="space-y-2">
+                                <div
+                                    v-for="player in activePlayers"
+                                    :key="player.id"
+                                    class="flex items-center gap-3 rounded-xl p-3"
+                                    :class="[
+                                        player.id === gameState.current_turn_player_id
+                                            ? 'bg-blue-500/20 ring-1 ring-blue-500/30'
+                                            : 'glass-light',
+                                    ]"
+                                >
+                                    <div
+                                        class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full"
+                                        :class="player.is_host ? 'bg-amber-500/20 text-amber-400' : 'bg-void-hover text-text-secondary'"
+                                    >
+                                        <img
+                                            v-if="player.avatar"
+                                            :src="avatarUrl(player.avatar)"
+                                            :alt="player.name"
+                                            class="h-full w-full object-cover"
+                                        />
+                                        <span v-else class="text-sm font-bold">{{ player.name.charAt(0).toUpperCase() }}</span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-1">
+                                            <span class="truncate font-bold text-text-primary">{{ player.name }}</span>
+                                            <Crown v-if="player.is_host" class="h-3.5 w-3.5 text-amber-400" />
+                                        </div>
+                                        <div class="text-xs text-text-secondary">
+                                            <span v-if="player.id === current_player.id" class="text-blue-400">You</span>
+                                            <span v-else-if="player.id === gameState.current_turn_player_id" class="text-blue-400">Current Turn</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Eliminated Players -->
+                        <div v-if="eliminatedPlayers.length > 0">
+                            <h4 class="mb-2 text-xs font-bold uppercase text-text-secondary">Eliminated</h4>
+                            <div class="space-y-2">
+                                <div
+                                    v-for="player in eliminatedPlayers"
+                                    :key="player.id"
+                                    class="flex items-center gap-3 rounded-xl bg-void-elevated/50 p-3 opacity-50"
+                                >
+                                    <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-void-hover grayscale">
+                                        <img
+                                            v-if="player.avatar"
+                                            :src="avatarUrl(player.avatar)"
+                                            :alt="player.name"
+                                            class="h-full w-full object-cover"
+                                        />
+                                        <span v-else class="text-sm font-bold">{{ player.name.charAt(0).toUpperCase() }}</span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <span class="truncate font-medium text-text-secondary line-through">{{ player.name }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
     </div>
 </template>
 
@@ -1212,23 +1494,25 @@ onUnmounted(() => {
     transform: translate(-50%, -100%);
 }
 
-.slide-left-enter-active,
-.slide-left-leave-active {
-    transition: all 0.3s ease;
+.slide-up-enter-active,
+.slide-up-leave-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.slide-left-enter-from,
-.slide-left-leave-to {
+.slide-up-enter-from,
+.slide-up-leave-to {
     opacity: 0;
-    transform: translateX(-100%);
+    transform: translateY(100%);
 }
 
-@media (min-width: 640px) {
-    .slide-left-enter-from,
-    .slide-left-leave-to {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 
 .bounce-enter-active {
@@ -1258,6 +1542,33 @@ onUnmounted(() => {
     100% {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+/* Mobile scroll container */
+.mobile-game-scroll {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Thin scrollbar for mobile */
+.scrollbar-thin::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(42, 42, 53, 0.8);
+    border-radius: 3px;
+}
+
+/* Safe area for bottom nav on mobile */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .glass.border-t {
+        padding-bottom: env(safe-area-inset-bottom);
     }
 }
 </style>

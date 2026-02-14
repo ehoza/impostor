@@ -12,9 +12,10 @@ This is a **social deduction multiplayer game** where players join lobbies, rece
 - **Real-Time Updates**: Game state polling (2-second intervals) with broadcasting events
 - **Configurable Settings**: Impostor count, max players, discussion time, voting time, word difficulty, language (en/ro)
 - **Chat System**: Public chat and private DMs between players
-- **Voting Mechanics**: Vote to start voting immediately (70% threshold) or reroll words
+- **Voting Mechanics**: Vote to start voting immediately (75% threshold) or reroll words (75% threshold)
 - **Win Tracking**: Persistent win counters for impostors and crew across multiple rounds
 - **Word Selection**: Cooldown system (100 rounds) to prevent word repetition
+- **Impostor Balancing**: Streak tracking (max 3 consecutive rounds as impostor) with cooldown system
 
 ## Technology Stack
 
@@ -37,6 +38,7 @@ This is a **social deduction multiplayer game** where players join lobbies, rece
 - `@tailwindcss/vite` - Tailwind CSS Vite plugin
 - `axios` - HTTP client
 - `@vueuse/core` - Vue utility library
+- `lucide-vue-next` - Icon library
 
 ## Project Structure
 
@@ -304,6 +306,7 @@ php artisan make:test --pest TestName
 | `/lobby/create` | POST | `createLobby` | Create new lobby |
 | `/lobby/join/{code}` | POST | `joinLobby` | Join existing lobby |
 | `/lobby/{code}` | GET | `showLobby` | Lobby page |
+| `/lobby/{code}/status` | GET | `lobbyStatus` | Get lobby status (polling) |
 | `/lobby/{code}/start` | POST | `startGame` | Start game (host only) |
 | `/lobby/{code}/settings` | POST | `updateSettings` | Update settings (host only) |
 | `/lobby/{code}/leave` | POST | `leaveLobby` | Leave lobby |
@@ -335,10 +338,12 @@ php artisan make:test --pest TestName
 ### Win Conditions
 - **Crew wins**: All impostors eliminated
 - **Impostor wins**: Impostor count >= Crew count
+- **Minimum players**: 3 required to start a game
+- **Auto-restart**: Rounds automatically restart after a win (8 second delay)
 
 ### Voting Thresholds
-- **Vote Now**: 70% of active players required
-- **Reroll**: 70% of active players required
+- **Vote Now**: 75% of active players required
+- **Reroll**: 75% of active players required
 
 ### Turn System
 - Turn order shuffled at game start
@@ -346,6 +351,18 @@ php artisan make:test --pest TestName
 - Current player ID in `lobby.current_turn_player_id`
 - Host or current turn player can advance turn
 - Skips eliminated players automatically
+- Tracks current round number (increments on full cycle)
+
+### Impostor Balancing
+- Players cannot be impostor more than 3 consecutive rounds (`impostor_streak`)
+- After 3 consecutive rounds as impostor, player gets 2-round cooldown (`impostor_cooldown`)
+- Cooldown decreases by 1 each round not as impostor
+
+### Word Selection
+- 100-round cooldown to prevent repetition
+- Words tracked in `word_usage` table
+- Supports multiple languages (en, ro)
+- Self-referential relationship: crew word → impostor word
 
 ## Environment Configuration
 

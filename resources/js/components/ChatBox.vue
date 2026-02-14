@@ -143,13 +143,13 @@ onUnmounted(() => {
 <template>
     <div class="glass-card flex h-full flex-col overflow-hidden rounded-2xl">
         <!-- Header -->
-        <div class="flex-shrink-0 border-b border-void-border px-4 py-3">
+        <div class="flex-shrink-0 border-b border-void-border px-3 py-2 sm:px-4 sm:py-3">
             <div class="mb-2 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20">
-                        <MessageSquare class="h-4 w-4 text-blue-400" />
+                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/20 sm:h-8 sm:w-8">
+                        <MessageSquare class="h-3.5 w-3.5 text-blue-400 sm:h-4 sm:w-4" />
                     </div>
-                    <h3 class="font-bold text-text-primary">Chat</h3>
+                    <h3 class="text-sm font-bold text-text-primary sm:text-base">Chat</h3>
                     <span v-if="unreadCount > 0" class="animate-bounce-in rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
                         {{ unreadCount }}
                     </span>
@@ -185,71 +185,71 @@ onUnmounted(() => {
         </Transition>
 
         <!-- Messages -->
-        <div ref="chatContainer" class="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+        <div ref="chatContainer" class="mobile-chat-scroll min-h-0 flex-1 space-y-2 overflow-y-auto p-2 sm:space-y-3 sm:p-3">
             <div v-for="message in publicMessages" :key="message.id" :class="['flex gap-2', isOwnMessage(message) ? 'flex-row-reverse' : 'flex-row']">
                 <!-- Avatar -->
                 <div class="flex-shrink-0">
-                    <div class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-void-hover sm:h-8 sm:w-8">
+                    <div class="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-void-hover sm:h-8 sm:w-8">
                         <img
                             v-if="getPlayerAvatar(message.sender_id)"
                             :src="avatarUrl(getPlayerAvatar(message.sender_id)!)"
                             :alt="message.sender_name"
                             class="h-full w-full object-cover"
                         />
-                        <span v-else class="text-[10px] font-bold text-text-secondary">{{ message.sender_name.charAt(0).toUpperCase() }}</span>
+                        <span v-else class="text-[9px] font-bold text-text-secondary sm:text-[10px]">{{ message.sender_name.charAt(0).toUpperCase() }}</span>
                     </div>
                 </div>
                 <div
                     :class="[
-                        'max-w-[75%] rounded-xl px-3 py-2 text-sm',
+                        'max-w-[80%] rounded-xl px-2.5 py-1.5 text-xs sm:max-w-[75%] sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm',
                         isOwnMessage(message) ? 'rounded-br-none bg-blue-600 text-white' : 'glass-light rounded-bl-none text-text-primary',
                     ]"
                 >
                     <div class="mb-0.5 flex items-center gap-1">
-                        <span class="text-xs font-medium opacity-70">{{ message.sender_name }}</span>
+                        <span class="text-[10px] font-medium opacity-70 sm:text-xs">{{ message.sender_name }}</span>
                     </div>
-                    <p>{{ message.content }}</p>
-                    <span class="mt-0.5 block text-xs opacity-50">{{ formatTime(message.created_at) }}</span>
+                    <p class="break-words">{{ message.content }}</p>
+                    <span class="mt-0.5 block text-[9px] opacity-50 sm:text-xs">{{ formatTime(message.created_at) }}</span>
                 </div>
             </div>
 
             <!-- DM Section -->
-            <div v-if="dmMessages.length > 0" class="mt-3 border-t border-blue-500/30 pt-3">
-                <div class="mb-2 flex items-center gap-1 text-xs text-blue-400">
+            <div v-if="dmMessages.length > 0" class="mt-2 border-t border-blue-500/30 pt-2 sm:mt-3 sm:pt-3">
+                <div class="mb-2 flex items-center gap-1 text-[10px] text-blue-400 sm:text-xs">
                     <Lock class="h-3 w-3" />
                     Private Messages
                 </div>
                 <div
                     v-for="message in dmMessages"
                     :key="message.id"
-                    :class="['mt-1 flex gap-2', isOwnMessage(message) ? 'flex-row-reverse' : 'flex-row']"
+                    :class="['mt-1 flex gap-2 sm:mt-2', isOwnMessage(message) ? 'flex-row-reverse' : 'flex-row']"
                 >
                     <!-- Avatar -->
                     <div class="flex-shrink-0">
-                        <div class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-void-hover sm:h-8 sm:w-8">
+                        <div class="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-void-hover sm:h-8 sm:w-8">
                             <img
                                 v-if="getPlayerAvatar(message.sender_id)"
                                 :src="avatarUrl(getPlayerAvatar(message.sender_id)!)"
                                 :alt="message.sender_name"
                                 class="h-full w-full object-cover"
                             />
-                            <span v-else class="text-[10px] font-bold text-text-secondary">{{ message.sender_name.charAt(0).toUpperCase() }}</span>
+                            <span v-else class="text-[9px] font-bold text-text-secondary sm:text-[10px]">{{ message.sender_name.charAt(0).toUpperCase() }}</span>
                         </div>
                     </div>
                     <div
                         :class="[
-                            'max-w-[75%] rounded-xl px-3 py-2 text-sm',
+                            'max-w-[80%] rounded-xl px-2.5 py-1.5 text-xs sm:max-w-[75%] sm:rounded-xl sm:px-3 sm:py-2 sm:text-sm',
                             isOwnMessage(message)
                                 ? 'rounded-br-none bg-blue-600 text-white'
                                 : 'rounded-bl-none border border-blue-500/30 bg-blue-900/30 text-blue-100',
                         ]"
                     >
-                        <div class="mb-0.5 flex items-center gap-1">
-                            <span class="text-xs opacity-70">{{ message.sender_name }}</span>
-                            <span class="text-xs opacity-50">-> {{ getPlayerName(message.recipient_id!) }}</span>
+                        <div class="mb-0.5 flex flex-wrap items-center gap-1">
+                            <span class="text-[10px] opacity-70 sm:text-xs">{{ message.sender_name }}</span>
+                            <span class="text-[9px] opacity-50 sm:text-xs">→ {{ getPlayerName(message.recipient_id!) }}</span>
                         </div>
-                        <p>{{ message.content }}</p>
-                        <span class="mt-0.5 block text-xs opacity-50">{{ formatTime(message.created_at) }}</span>
+                        <p class="break-words">{{ message.content }}</p>
+                        <span class="mt-0.5 block text-[9px] opacity-50 sm:text-xs">{{ formatTime(message.created_at) }}</span>
                     </div>
                 </div>
             </div>
@@ -265,7 +265,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Input -->
-        <div class="flex-shrink-0 border-t border-void-border p-3">
+        <div class="flex-shrink-0 border-t border-void-border p-2 sm:p-3">
             <form @submit.prevent="sendMessage" class="flex gap-2">
                 <input
                     v-model="newMessage"
@@ -273,12 +273,12 @@ onUnmounted(() => {
                     :placeholder="selectedRecipient ? 'Private message...' : 'Type a message...'"
                     maxlength="500"
                     :disabled="isLoading"
-                    class="input-field flex-1 rounded-xl px-3 py-2 text-sm text-text-primary placeholder-text-tertiary"
+                    class="input-field flex-1 rounded-xl px-3 py-2 text-xs text-text-primary placeholder-text-tertiary sm:text-sm"
                 />
                 <button
                     type="submit"
                     :disabled="!newMessage.trim() || isLoading"
-                    class="btn-primary flex items-center justify-center rounded-xl px-3 py-2 text-white disabled:opacity-50"
+                    class="btn-primary flex flex-shrink-0 items-center justify-center rounded-xl px-3 py-2 text-white disabled:opacity-50 sm:px-4"
                 >
                     <Send v-if="!isLoading" class="h-4 w-4" />
                     <div v-else class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
@@ -298,5 +298,25 @@ onUnmounted(() => {
 .slide-down-leave-to {
     opacity: 0;
     transform: translateY(-10px);
+}
+
+/* Mobile-optimized scrolling */
+.mobile-chat-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+}
+
+/* Adjust scrollbar for mobile */
+.mobile-chat-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.mobile-chat-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mobile-chat-scroll::-webkit-scrollbar-thumb {
+    background: rgba(42, 42, 53, 0.6);
+    border-radius: 2px;
 }
 </style>

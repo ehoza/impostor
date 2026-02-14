@@ -26,9 +26,9 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import AvatarSelectionModal from '@/components/AvatarSelectionModal.vue';
+import { avatarUrl } from '@/lib/avatars';
 import { play, start } from '@/routes/game';
 import { leave, settings } from '@/routes/lobby';
-import { avatarUrl } from '@/lib/avatars';
 
 const props = defineProps<{
     lobby: {
