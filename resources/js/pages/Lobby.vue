@@ -39,7 +39,7 @@ const props = defineProps<{
             discussion_time: number;
             voting_time: number;
             word_difficulty: number;
-        language: 'en' | 'ro';
+            language: 'en' | 'ro';
         };
         player_count: number;
     };
@@ -113,10 +113,7 @@ const startGame = async () => {
         await axios.post(start.url(props.lobby.code));
         router.visit(play.url(props.lobby.code));
     } catch (err: unknown) {
-        const msg =
-            axios.isAxiosError(err) && err.response?.data?.error
-                ? String(err.response.data.error)
-                : 'Failed to start game';
+        const msg = axios.isAxiosError(err) && err.response?.data?.error ? String(err.response.data.error) : 'Failed to start game';
         startGameError.value = msg;
     } finally {
         startGameLoading.value = false;
@@ -187,9 +184,9 @@ const getDifficultyColor = (level: number) => {
 <template>
     <Head :title="`Lobby ${lobby.code}`" />
 
-    <div class="relative min-h-screen overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 p-3 sm:p-4 md:p-6">
+    <div class="bg-void relative min-h-screen overflow-hidden p-3 sm:p-4 md:p-6">
         <!-- Join overlay when visiting lobby link directly without being in lobby -->
-        <div v-if="!current_player" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/95 p-4 backdrop-blur-sm">
+        <div v-if="!current_player" class="bg-void/95 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div class="glass-card animate-fade-in-scale w-full max-w-md rounded-2xl p-5 sm:rounded-3xl sm:p-6">
                 <template v-if="lobby.status === 'waiting'">
                     <div class="mb-6 flex items-center gap-3">
@@ -199,13 +196,13 @@ const getDifficultyColor = (level: number) => {
                             <LogIn class="h-5 w-5 text-white sm:h-6 sm:w-6" />
                         </div>
                         <div>
-                            <h2 class="text-lg font-bold text-white sm:text-xl">Join Lobby</h2>
-                            <p class="text-xs text-gray-400 sm:text-sm">{{ lobby.name || `Lobby ${lobby.code}` }}</p>
+                            <h2 class="text-lg font-bold text-text-primary sm:text-xl">Join Lobby</h2>
+                            <p class="text-xs text-text-secondary sm:text-sm">{{ lobby.name || `Lobby ${lobby.code}` }}</p>
                         </div>
                     </div>
                     <form @submit.prevent="joinForm.post(`/lobby/join/${lobby.code}`, { preserveScroll: true })" class="space-y-4 sm:space-y-5">
                         <div>
-                            <label class="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
+                            <label class="mb-2 block text-xs font-medium text-text-secondary sm:text-sm">
                                 <span class="flex items-center gap-2">
                                     <User class="h-4 w-4 text-blue-400" />
                                     Your Name
@@ -216,7 +213,7 @@ const getDifficultyColor = (level: number) => {
                                 type="text"
                                 required
                                 maxlength="30"
-                                class="input-field input-field-blue w-full rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 sm:rounded-xl sm:py-4"
+                                class="input-field w-full rounded-lg px-4 py-3 text-sm text-text-primary placeholder-text-tertiary sm:rounded-xl sm:py-4"
                                 placeholder="Enter your name"
                             />
                             <p v-if="joinForm.errors.player_name" class="mt-1.5 text-xs text-red-400 sm:text-sm">
@@ -229,7 +226,7 @@ const getDifficultyColor = (level: number) => {
                         <button
                             type="submit"
                             :disabled="joinForm.processing"
-                            class="btn-secondary flex w-full items-center justify-center gap-2 rounded-lg py-3.5 text-sm font-bold text-white sm:rounded-xl sm:py-4"
+                            class="btn-primary flex w-full items-center justify-center gap-2 rounded-lg py-3.5 text-sm font-bold text-white sm:rounded-xl sm:py-4"
                         >
                             <template v-if="joinForm.processing">
                                 <div class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white sm:h-5 sm:w-5"></div>
@@ -245,20 +242,20 @@ const getDifficultyColor = (level: number) => {
                 </template>
                 <template v-else>
                     <div class="flex flex-col items-center gap-4 py-4 text-center">
-                        <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-amber-500/20 sm:h-16 sm:w-16 sm:rounded-2xl">
-                            <AlertCircle class="h-7 w-7 text-amber-400 sm:h-8 sm:w-8" />
+                        <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/20 sm:h-16 sm:w-16 sm:rounded-2xl">
+                            <AlertCircle class="h-7 w-7 text-blue-400 sm:h-8 sm:w-8" />
                         </div>
                         <div>
-                            <h2 class="text-lg font-bold text-white sm:text-xl">
+                            <h2 class="text-lg font-bold text-text-primary sm:text-xl">
                                 {{ lobby.status === 'playing' ? 'Game in progress' : 'Game ended' }}
                             </h2>
-                            <p class="mt-1 text-sm text-gray-400">
+                            <p class="mt-1 text-sm text-text-secondary">
                                 {{ lobby.status === 'playing' ? 'This game has already started.' : 'This lobby has finished.' }}
                             </p>
                         </div>
                         <Link
                             href="/"
-                            class="btn-glass flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white sm:rounded-xl sm:px-6 sm:py-3"
+                            class="btn-glass flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary sm:rounded-xl sm:px-6 sm:py-3"
                         >
                             <ArrowRight class="h-4 w-4 rotate-180 sm:h-5 sm:w-5" />
                             Back to Home
@@ -269,9 +266,9 @@ const getDifficultyColor = (level: number) => {
         </div>
         <!-- Background -->
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
-            <div class="bg-grid-pattern absolute inset-0 opacity-20"></div>
+            <div class="bg-grid-pattern absolute inset-0 opacity-30"></div>
             <div
-                class="absolute top-0 right-0 h-[300px] w-[300px] rounded-full bg-red-600/5 blur-[100px] sm:h-[600px] sm:w-[600px] sm:blur-[150px]"
+                class="absolute top-0 right-0 h-[300px] w-[300px] rounded-full bg-blue-600/5 blur-[100px] sm:h-[600px] sm:w-[600px] sm:blur-[150px]"
             ></div>
             <div
                 class="absolute bottom-0 left-0 h-[250px] w-[250px] rounded-full bg-blue-600/5 blur-[80px] sm:h-[500px] sm:w-[500px] sm:blur-[120px]"
@@ -284,26 +281,26 @@ const getDifficultyColor = (level: number) => {
                 <div>
                     <div class="mb-2 flex items-center gap-3">
                         <div
-                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-700 shadow-lg shadow-red-500/20 sm:h-12 sm:w-12 sm:rounded-2xl"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/20 sm:h-12 sm:w-12 sm:rounded-2xl"
                         >
                             <ShieldAlert class="h-5 w-5 text-white sm:h-6 sm:w-6" />
                         </div>
                         <div>
                             <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                                <h1 class="text-2xl font-black text-white sm:text-3xl">Lobby</h1>
+                                <h1 class="text-2xl font-black text-text-primary sm:text-3xl">Lobby</h1>
                                 <button
                                     @click="copyCode"
-                                    class="group glass flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all hover:bg-gray-800/50 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2"
+                                    class="group glass flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all hover:bg-void-hover sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2"
                                 >
-                                    <span class="font-mono text-lg font-bold tracking-wider text-amber-400 sm:text-2xl">{{ lobby.code }}</span>
+                                    <span class="font-mono text-lg font-bold tracking-wider text-blue-400 sm:text-2xl">{{ lobby.code }}</span>
                                     <component
                                         :is="copiedCode ? Check : Copy"
                                         class="h-4 w-4 transition-colors sm:h-5 sm:w-5"
-                                        :class="copiedCode ? 'text-green-400' : 'text-gray-400 group-hover:text-white'"
+                                        :class="copiedCode ? 'text-green-400' : 'text-text-secondary group-hover:text-text-primary'"
                                     />
                                 </button>
                             </div>
-                            <p v-if="lobby.name" class="mt-0.5 text-xs text-gray-400 sm:text-sm">{{ lobby.name }}</p>
+                            <p v-if="lobby.name" class="mt-0.5 text-xs text-text-secondary sm:text-sm">{{ lobby.name }}</p>
                         </div>
                     </div>
                     <p v-if="copiedCode" class="animate-fade-in flex items-center gap-1 text-xs text-green-400 sm:text-sm">
@@ -314,7 +311,7 @@ const getDifficultyColor = (level: number) => {
 
                 <button
                     @click="leaveLobby"
-                    class="btn-glass flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-red-400 hover:text-red-300 sm:gap-2 sm:rounded-xl sm:px-5 sm:py-3"
+                    class="btn-danger flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium sm:gap-2 sm:rounded-xl sm:px-5 sm:py-3"
                 >
                     <LogOut class="h-4 w-4 sm:h-5 sm:w-5" />
                     <span class="sm:hidden">Leave</span>
@@ -332,15 +329,15 @@ const getDifficultyColor = (level: number) => {
                                 <UsersRound class="h-4 w-4 text-blue-400 sm:h-5 sm:w-5" />
                             </div>
                             <div>
-                                <h2 class="text-lg font-bold text-white sm:text-xl">Players</h2>
-                                <p class="text-xs text-gray-400 sm:text-sm">Waiting for everyone to join</p>
+                                <h2 class="text-lg font-bold text-text-primary sm:text-xl">Players</h2>
+                                <p class="text-xs text-text-secondary sm:text-sm">Waiting for everyone to join</p>
                             </div>
                         </div>
                         <div class="glass flex items-center gap-1.5 rounded-full px-3 py-1.5 sm:gap-2 sm:px-4 sm:py-2">
-                            <Users class="h-3.5 w-3.5 text-gray-400 sm:h-4 sm:w-4" />
-                            <span class="text-sm font-semibold text-white sm:text-base">{{ players.length }}</span>
-                            <span class="text-gray-500">/</span>
-                            <span class="text-xs text-gray-400 sm:text-sm">{{ lobby.settings.max_players }}</span>
+                            <Users class="h-3.5 w-3.5 text-text-secondary sm:h-4 sm:w-4" />
+                            <span class="text-sm font-semibold text-text-primary sm:text-base">{{ players.length }}</span>
+                            <span class="text-text-tertiary">/</span>
+                            <span class="text-xs text-text-secondary sm:text-sm">{{ lobby.settings.max_players }}</span>
                         </div>
                     </div>
 
@@ -357,14 +354,14 @@ const getDifficultyColor = (level: number) => {
                                 :class="
                                     player.is_host
                                         ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/20 text-amber-400 ring-1 ring-amber-500/30'
-                                        : 'bg-gray-700/50 text-gray-300'
+                                        : 'bg-void-hover text-text-secondary'
                                 "
                             >
                                 {{ player.name.charAt(0).toUpperCase() }}
                             </div>
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-1.5 sm:gap-2">
-                                    <span class="truncate text-sm font-medium text-white">{{ player.name }}</span>
+                                    <span class="truncate text-sm font-medium text-text-primary">{{ player.name }}</span>
                                     <span v-if="player.id === current_player?.id" class="text-[10px] font-medium text-blue-400 sm:text-xs"
                                         >(You)</span
                                     >
@@ -386,9 +383,9 @@ const getDifficultyColor = (level: number) => {
                         <div
                             v-for="i in Math.max(0, lobby.settings.max_players - players.length)"
                             :key="`empty-${i}`"
-                            class="glass-light flex items-center justify-center rounded-lg border-2 border-dashed border-gray-700/50 p-2.5 opacity-40 sm:rounded-xl sm:p-3"
+                            class="glass-light flex items-center justify-center rounded-lg border-2 border-dashed border-void-border p-2.5 opacity-40 sm:rounded-xl sm:p-3"
                         >
-                            <span class="flex items-center gap-1.5 text-xs text-gray-500 sm:gap-2 sm:text-sm">
+                            <span class="flex items-center gap-1.5 text-xs text-text-tertiary sm:gap-2 sm:text-sm">
                                 <User class="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                 Empty slot
                             </span>
@@ -400,19 +397,19 @@ const getDifficultyColor = (level: number) => {
                 <div class="glass-card animate-fade-in-scale rounded-2xl p-4 delay-200 sm:rounded-3xl sm:p-6">
                     <div class="mb-4 flex items-center justify-between sm:mb-6">
                         <div class="flex items-center gap-2 sm:gap-3">
-                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/20 sm:h-10 sm:w-10 sm:rounded-xl">
-                                <Settings class="h-4 w-4 text-purple-400 sm:h-5 sm:w-5" />
+                            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 sm:h-10 sm:w-10 sm:rounded-xl">
+                                <Settings class="h-4 w-4 text-blue-400 sm:h-5 sm:w-5" />
                             </div>
                             <div>
-                                <h2 class="text-lg font-bold text-white sm:text-xl">Settings</h2>
-                                <p class="text-xs text-gray-400 sm:text-sm">Game configuration</p>
+                                <h2 class="text-lg font-bold text-text-primary sm:text-xl">Settings</h2>
+                                <p class="text-xs text-text-secondary sm:text-sm">Game configuration</p>
                             </div>
                         </div>
                         <button
                             v-if="current_player?.is_host"
                             @click="showSettings = !showSettings"
                             class="btn-glass rounded-md p-1.5 sm:rounded-lg sm:p-2"
-                            :class="showSettings ? 'bg-gray-700/50 text-white' : 'text-gray-400'"
+                            :class="showSettings ? 'bg-void-hover text-text-primary' : 'text-text-secondary'"
                         >
                             <component :is="showSettings ? X : Settings" class="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
@@ -425,9 +422,9 @@ const getDifficultyColor = (level: number) => {
                                 <div class="flex h-6 w-6 items-center justify-center rounded-md bg-red-500/20 sm:h-8 sm:w-8 sm:rounded-lg">
                                     <ShieldAlert class="h-3 w-3 text-red-400 sm:h-4 sm:w-4" />
                                 </div>
-                                <span class="text-xs text-gray-300 sm:text-sm">Impostors</span>
+                                <span class="text-xs text-text-secondary sm:text-sm">Impostors</span>
                             </div>
-                            <span class="rounded-md bg-gray-800/50 px-2 py-0.5 text-sm font-bold text-white sm:rounded-lg sm:px-3 sm:py-1">{{
+                            <span class="rounded-md bg-void-hover px-2 py-0.5 text-sm font-bold text-text-primary sm:rounded-lg sm:px-3 sm:py-1">{{
                                 lobby.settings.impostor_count
                             }}</span>
                         </div>
@@ -437,9 +434,9 @@ const getDifficultyColor = (level: number) => {
                                 <div class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/20 sm:h-8 sm:w-8 sm:rounded-lg">
                                     <Users class="h-3 w-3 text-blue-400 sm:h-4 sm:w-4" />
                                 </div>
-                                <span class="text-xs text-gray-300 sm:text-sm">Max Players</span>
+                                <span class="text-xs text-text-secondary sm:text-sm">Max Players</span>
                             </div>
-                            <span class="rounded-md bg-gray-800/50 px-2 py-0.5 text-sm font-bold text-white sm:rounded-lg sm:px-3 sm:py-1">{{
+                            <span class="rounded-md bg-void-hover px-2 py-0.5 text-sm font-bold text-text-primary sm:rounded-lg sm:px-3 sm:py-1">{{
                                 lobby.settings.max_players
                             }}</span>
                         </div>
@@ -449,9 +446,9 @@ const getDifficultyColor = (level: number) => {
                                 <div class="flex h-6 w-6 items-center justify-center rounded-md bg-green-500/20 sm:h-8 sm:w-8 sm:rounded-lg">
                                     <Clock class="h-3 w-3 text-green-400 sm:h-4 sm:w-4" />
                                 </div>
-                                <span class="text-xs text-gray-300 sm:text-sm">Discussion</span>
+                                <span class="text-xs text-text-secondary sm:text-sm">Discussion</span>
                             </div>
-                            <span class="rounded-md bg-gray-800/50 px-2 py-0.5 text-sm font-bold text-white sm:rounded-lg sm:px-3 sm:py-1"
+                            <span class="rounded-md bg-void-hover px-2 py-0.5 text-sm font-bold text-text-primary sm:rounded-lg sm:px-3 sm:py-1"
                                 >{{ lobby.settings.discussion_time }}s</span
                             >
                         </div>
@@ -461,22 +458,22 @@ const getDifficultyColor = (level: number) => {
                                 <div class="flex h-6 w-6 items-center justify-center rounded-md bg-yellow-500/20 sm:h-8 sm:w-8 sm:rounded-lg">
                                     <Zap class="h-3 w-3 text-yellow-400 sm:h-4 sm:w-4" />
                                 </div>
-                                <span class="text-xs text-gray-300 sm:text-sm">Voting</span>
+                                <span class="text-xs text-text-secondary sm:text-sm">Voting</span>
                             </div>
-                            <span class="rounded-md bg-gray-800/50 px-2 py-0.5 text-sm font-bold text-white sm:rounded-lg sm:px-3 sm:py-1"
+                            <span class="rounded-md bg-void-hover px-2 py-0.5 text-sm font-bold text-text-primary sm:rounded-lg sm:px-3 sm:py-1"
                                 >{{ lobby.settings.voting_time }}s</span
                             >
                         </div>
 
                         <div class="glass-light flex items-center justify-between rounded-lg p-2.5 sm:rounded-xl sm:p-3">
                             <div class="flex items-center gap-2 sm:gap-3">
-                                <div class="flex h-6 w-6 items-center justify-center rounded-md bg-purple-500/20 sm:h-8 sm:w-8 sm:rounded-lg">
-                                    <Flame class="h-3 w-3 text-purple-400 sm:h-4 sm:w-4" />
+                                <div class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/20 sm:h-8 sm:w-8 sm:rounded-lg">
+                                    <Flame class="h-3 w-3 text-blue-400 sm:h-4 sm:w-4" />
                                 </div>
-                                <span class="text-xs text-gray-300 sm:text-sm">Difficulty</span>
+                                <span class="text-xs text-text-secondary sm:text-sm">Difficulty</span>
                             </div>
                             <span
-                                class="rounded-md bg-gray-800/50 px-2 py-0.5 text-[10px] font-bold sm:rounded-lg sm:px-3 sm:py-1 sm:text-xs"
+                                class="rounded-md bg-void-hover px-2 py-0.5 text-[10px] font-bold sm:rounded-lg sm:px-3 sm:py-1 sm:text-xs"
                                 :class="getDifficultyColor(lobby.settings.word_difficulty)"
                             >
                                 {{ getDifficultyLabel(lobby.settings.word_difficulty) }}
@@ -485,14 +482,14 @@ const getDifficultyColor = (level: number) => {
 
                         <div class="glass-light flex items-center justify-between rounded-lg p-2.5 sm:rounded-xl sm:p-3">
                             <div class="flex items-center gap-2 sm:gap-3">
-                                <div class="flex h-6 w-6 items-center justify-center rounded-md bg-orange-500/20 sm:h-8 sm:w-8 sm:rounded-lg">
-                                    <span class="text-sm font-bold text-orange-400 sm:text-base">{{
+                                <div class="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/20 sm:h-8 sm:w-8 sm:rounded-lg">
+                                    <span class="text-sm font-bold text-blue-400 sm:text-base">{{
                                         lobby.settings.language === 'en' ? 'EN' : 'RO'
                                     }}</span>
                                 </div>
-                                <span class="text-xs text-gray-300 sm:text-sm">Language</span>
+                                <span class="text-xs text-text-secondary sm:text-sm">Language</span>
                             </div>
-                            <span class="rounded-md bg-gray-800/50 px-2 py-0.5 text-sm font-bold text-white sm:rounded-lg sm:px-3 sm:py-1">{{
+                            <span class="rounded-md bg-void-hover px-2 py-0.5 text-sm font-bold text-text-primary sm:rounded-lg sm:px-3 sm:py-1">{{
                                 lobby.settings.language === 'en' ? 'English' : 'Română'
                             }}</span>
                         </div>
@@ -502,61 +499,61 @@ const getDifficultyColor = (level: number) => {
                     <form v-else @submit.prevent="updateSettings" class="animate-fade-in space-y-3 sm:space-y-4">
                         <div class="grid grid-cols-2 gap-2 sm:gap-3">
                             <div>
-                                <label class="mb-1 block text-[10px] text-gray-400 sm:mb-1.5 sm:text-xs">Impostors</label>
+                                <label class="mb-1 block text-[10px] text-text-secondary sm:mb-1.5 sm:text-xs">Impostors</label>
                                 <input
                                     v-model.number="settingsForm.settings.impostor_count"
                                     type="number"
                                     min="1"
                                     max="5"
-                                    class="input-field w-full rounded-md px-2 py-2 text-xs text-white sm:rounded-lg sm:px-3 sm:py-2.5"
+                                    class="input-field w-full rounded-md px-2 py-2 text-xs text-text-primary sm:rounded-lg sm:px-3 sm:py-2.5"
                                 />
                             </div>
                             <div>
-                                <label class="mb-1 block text-[10px] text-gray-400 sm:mb-1.5 sm:text-xs">Max Players</label>
+                                <label class="mb-1 block text-[10px] text-text-secondary sm:mb-1.5 sm:text-xs">Max Players</label>
                                 <input
                                     v-model.number="settingsForm.settings.max_players"
                                     type="number"
                                     min="2"
                                     max="20"
-                                    class="input-field w-full rounded-md px-2 py-2 text-xs text-white sm:rounded-lg sm:px-3 sm:py-2.5"
+                                    class="input-field w-full rounded-md px-2 py-2 text-xs text-text-primary sm:rounded-lg sm:px-3 sm:py-2.5"
                                 />
                             </div>
                         </div>
                         <div>
-                            <label class="mb-1 block text-[10px] text-gray-400 sm:mb-1.5 sm:text-xs">Discussion Time (seconds)</label>
+                            <label class="mb-1 block text-[10px] text-text-secondary sm:mb-1.5 sm:text-xs">Discussion Time (seconds)</label>
                             <input
                                 v-model.number="settingsForm.settings.discussion_time"
                                 type="number"
                                 min="15"
                                 max="300"
-                                class="input-field w-full rounded-md px-2 py-2 text-xs text-white sm:rounded-lg sm:px-3 sm:py-2.5"
+                                class="input-field w-full rounded-md px-2 py-2 text-xs text-text-primary sm:rounded-lg sm:px-3 sm:py-2.5"
                             />
                         </div>
                         <div>
-                            <label class="mb-1 block text-[10px] text-gray-400 sm:mb-1.5 sm:text-xs">Voting Time (seconds)</label>
+                            <label class="mb-1 block text-[10px] text-text-secondary sm:mb-1.5 sm:text-xs">Voting Time (seconds)</label>
                             <input
                                 v-model.number="settingsForm.settings.voting_time"
                                 type="number"
                                 min="15"
                                 max="180"
-                                class="input-field w-full rounded-md px-2 py-2 text-xs text-white sm:rounded-lg sm:px-3 sm:py-2.5"
+                                class="input-field w-full rounded-md px-2 py-2 text-xs text-text-primary sm:rounded-lg sm:px-3 sm:py-2.5"
                             />
                         </div>
                         <div>
-                            <label class="mb-1 block text-[10px] text-gray-400 sm:mb-1.5 sm:text-xs">Word Difficulty (1-5)</label>
+                            <label class="mb-1 block text-[10px] text-text-secondary sm:mb-1.5 sm:text-xs">Word Difficulty (1-5)</label>
                             <input
                                 v-model.number="settingsForm.settings.word_difficulty"
                                 type="number"
                                 min="1"
                                 max="5"
-                                class="input-field w-full rounded-md px-2 py-2 text-xs text-white sm:rounded-lg sm:px-3 sm:py-2.5"
+                                class="input-field w-full rounded-md px-2 py-2 text-xs text-text-primary sm:rounded-lg sm:px-3 sm:py-2.5"
                             />
                         </div>
                         <div>
-                            <label class="mb-1 block text-[10px] text-gray-400 sm:mb-1.5 sm:text-xs">Language</label>
+                            <label class="mb-1 block text-[10px] text-text-secondary sm:mb-1.5 sm:text-xs">Language</label>
                             <select
                                 v-model="settingsForm.settings.language"
-                                class="input-field w-full rounded-md px-2 py-2 text-xs text-white sm:rounded-lg sm:px-3 sm:py-2.5"
+                                class="input-field w-full rounded-md px-2 py-2 text-xs text-text-primary sm:rounded-lg sm:px-3 sm:py-2.5"
                             >
                                 <option value="en">English</option>
                                 <option value="ro">Română</option>
@@ -565,7 +562,7 @@ const getDifficultyColor = (level: number) => {
                         <button
                             type="submit"
                             :disabled="settingsForm.processing"
-                            class="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 py-2.5 text-sm font-semibold text-white transition-all hover:from-purple-500 hover:to-purple-600 sm:rounded-xl sm:py-3"
+                            class="btn-primary flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white sm:rounded-xl sm:py-3"
                         >
                             <Save class="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             Save Settings
@@ -580,26 +577,26 @@ const getDifficultyColor = (level: number) => {
                         class="glass-card relative overflow-hidden rounded-2xl p-5 text-center sm:rounded-3xl sm:p-8"
                     >
                         <!-- Background glow -->
-                        <div class="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10"></div>
+                        <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-blue-500/10 to-blue-500/10"></div>
                         <div
-                            class="absolute top-1/2 left-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-500/20 blur-[60px] sm:h-96 sm:w-96 sm:blur-[100px]"
+                            class="absolute top-1/2 left-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/20 blur-[60px] sm:h-96 sm:w-96 sm:blur-[100px]"
                         ></div>
 
                         <div class="relative z-10">
                             <div
-                                class="animate-float mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-xl shadow-green-500/30 sm:mb-4 sm:h-20 sm:w-20 sm:rounded-2xl"
+                                class="animate-float mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-xl shadow-blue-500/30 sm:mb-4 sm:h-20 sm:w-20 sm:rounded-2xl"
                             >
                                 <Play class="ml-0.5 h-7 w-7 text-white sm:ml-1 sm:h-10 sm:w-10" fill="currentColor" />
                             </div>
-                            <h3 class="mb-1 text-xl font-bold text-white sm:mb-2 sm:text-2xl">Ready to Start?</h3>
-                            <p class="mx-auto mb-4 max-w-md text-xs text-gray-400 sm:mb-6 sm:text-base">
+                            <h3 class="mb-1 text-xl font-bold text-text-primary sm:mb-2 sm:text-2xl">Ready to Start?</h3>
+                            <p class="mx-auto mb-4 max-w-md text-xs text-text-secondary sm:mb-6 sm:text-base">
                                 All players are here! Click the button below to begin the game.
                             </p>
                             <p v-if="startGameError" class="mb-3 text-sm text-red-400">{{ startGameError }}</p>
                             <button
                                 @click="startGame"
                                 :disabled="startGameLoading"
-                                class="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-3 text-lg font-black text-white shadow-2xl shadow-green-600/30 transition-all hover:scale-105 hover:from-green-500 hover:to-emerald-500 hover:shadow-green-600/50 disabled:cursor-not-allowed disabled:opacity-70 sm:gap-3 sm:rounded-2xl sm:px-12 sm:py-5 sm:text-xl"
+                                class="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-600 px-8 py-3 text-lg font-black text-white shadow-2xl shadow-blue-600/30 transition-all hover:scale-105 hover:from-blue-500 hover:to-blue-500 hover:shadow-blue-600/50 disabled:cursor-not-allowed disabled:opacity-70 sm:gap-3 sm:rounded-2xl sm:px-12 sm:py-5 sm:text-xl"
                             >
                                 <template v-if="startGameLoading">
                                     <div class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white sm:h-6 sm:w-6"></div>
@@ -616,14 +613,12 @@ const getDifficultyColor = (level: number) => {
                     </div>
 
                     <div v-else-if="players.length < 2" class="glass-card flex items-center gap-3 rounded-2xl p-4 sm:gap-4 sm:rounded-3xl sm:p-6">
-                        <div
-                            class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/20 sm:h-12 sm:w-12 sm:rounded-xl"
-                        >
-                            <AlertCircle class="h-5 w-5 text-amber-400 sm:h-6 sm:w-6" />
+                        <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/20 sm:h-12 sm:w-12 sm:rounded-xl">
+                            <AlertCircle class="h-5 w-5 text-blue-400 sm:h-6 sm:w-6" />
                         </div>
                         <div class="min-w-0">
-                            <h3 class="text-base font-semibold text-white sm:text-lg">Waiting for more players</h3>
-                            <p class="text-xs text-gray-400 sm:text-sm">At least 2 players are required to start the game</p>
+                            <h3 class="text-base font-semibold text-text-primary sm:text-lg">Waiting for more players</h3>
+                            <p class="text-xs text-text-secondary sm:text-sm">At least 2 players are required to start the game</p>
                         </div>
                     </div>
 
@@ -634,8 +629,8 @@ const getDifficultyColor = (level: number) => {
                             <Clock class="h-5 w-5 text-blue-400 sm:h-6 sm:w-6" />
                         </div>
                         <div class="min-w-0">
-                            <h3 class="text-base font-semibold text-white sm:text-lg">Waiting for host</h3>
-                            <p class="text-xs text-gray-400 sm:text-sm">The host will start the game when everyone is ready</p>
+                            <h3 class="text-base font-semibold text-text-primary sm:text-lg">Waiting for host</h3>
+                            <p class="text-xs text-text-secondary sm:text-sm">The host will start the game when everyone is ready</p>
                         </div>
                     </div>
                 </div>

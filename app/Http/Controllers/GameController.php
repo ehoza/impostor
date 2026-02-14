@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\AutoRestartGame;
 use App\Models\Lobby;
 use App\Models\Message;
 use App\Models\Player;
@@ -299,6 +300,15 @@ class GameController extends Controller
         $eliminationVoteHasVoted = isset($eliminationVotes[$currentPlayerId]);
         $eliminationVotedPlayerIds = array_keys($eliminationVotes);
 
+        // Format elimination votes for frontend
+        $formattedEliminationVotes = [];
+        foreach ($eliminationVotes as $voterId => $targetId) {
+            $formattedEliminationVotes[] = [
+                'player_id' => (int) $voterId,
+                'target_player_id' => $targetId === null ? null : (int) $targetId,
+            ];
+        }
+
         return response()->json([
             'status' => $lobby->status,
             'game_result' => $lobby->game_result,
@@ -329,6 +339,8 @@ class GameController extends Controller
             ],
             'elimination_vote_has_voted' => $eliminationVoteHasVoted,
             'elimination_voted_player_ids' => $eliminationVotedPlayerIds,
+            'elimination_votes' => $formattedEliminationVotes,
+            'total_voters' => $activePlayers,
         ]);
     }
 
@@ -422,6 +434,59 @@ class GameController extends Controller
 
         $impostorsRemaining = $lobby->players()->where('is_impostor', true)->where('is_eliminated', false)->count();
         $crewRemaining = $lobby->players()->where('is_impostor', false)->where('is_eliminated', false)->count();
+        $totalRemaining = $impostorsRemaining + $crewRemaining;
+
+        // Check if only 2 players remain (minimum 3 to continue)
+        if ($totalRemaining <= 2) {
+            // Need at least 3 players to continue the game
+            // If impostor is among the remaining 2, impostor wins
+            // If no impostor among remaining, crew wins
+            if ($impostorsRemaining > 0) {
+                $lobby->update([
+                    'status' => 'finished',
+                    'game_result' => 'impostor_wins',
+                    'impostor_wins' => $lobby->impostor_wins + 1,
+                ]);
+                broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'impostor_wins'));
+
+                // Auto-restart after delay
+                $this->scheduleAutoRestart($lobby);
+
+                return response()->json([
+                    'success' => true,
+                    'eliminated' => [
+                        'id' => $eliminatedPlayer->id,
+                        'name' => $eliminatedPlayer->name,
+                        'is_impostor' => false,
+                    ],
+                    'was_impostor' => false,
+                    'game_result' => 'impostor_wins',
+                    'auto_restart' => true,
+                ]);
+            } else {
+                $lobby->update([
+                    'status' => 'finished',
+                    'game_result' => 'crew_wins',
+                    'crew_wins' => $lobby->crew_wins + 1,
+                ]);
+                broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'crew_wins'));
+
+                // Auto-restart after delay
+                $this->scheduleAutoRestart($lobby);
+
+                return response()->json([
+                    'success' => true,
+                    'eliminated' => [
+                        'id' => $eliminatedPlayer->id,
+                        'name' => $eliminatedPlayer->name,
+                        'is_impostor' => $eliminatedPlayer->is_impostor,
+                    ],
+                    'was_impostor' => $eliminatedPlayer->is_impostor,
+                    'game_result' => 'crew_wins',
+                    'auto_restart' => true,
+                ]);
+            }
+        }
 
         if ($impostorsRemaining >= $crewRemaining) {
             $lobby->update([
@@ -431,15 +496,19 @@ class GameController extends Controller
             ]);
             broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'impostor_wins'));
 
+            // Auto-restart after delay
+            $this->scheduleAutoRestart($lobby);
+
             return response()->json([
                 'success' => true,
                 'eliminated' => [
                     'id' => $eliminatedPlayer->id,
                     'name' => $eliminatedPlayer->name,
-                    'is_impostor' => false,
+                    'is_impostor' => $eliminatedPlayer->is_impostor,
                 ],
-                'was_impostor' => false,
+                'was_impostor' => $eliminatedPlayer->is_impostor,
                 'game_result' => 'impostor_wins',
+                'auto_restart' => true,
             ]);
         }
 
@@ -452,6 +521,8 @@ class GameController extends Controller
                     'status' => 'finished',
                     'game_result' => 'crew_wins',
                 ]);
+                // Auto-restart after delay
+                $this->scheduleAutoRestart($lobby);
             }
 
             broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'crew_wins'));
@@ -497,7 +568,19 @@ class GameController extends Controller
         ]);
     }
 
-    private function restartRound(Lobby $lobby): bool
+    /**
+     * Schedule an automatic game restart after a delay.
+     */
+    private function scheduleAutoRestart(Lobby $lobby): void
+    {
+        // Store the scheduled restart time
+        Cache::put("lobby_{$lobby->id}_auto_restart", now()->addSeconds(8)->timestamp, 60);
+
+        // Dispatch a job to restart the game after 8 seconds
+        AutoRestartGame::dispatch($lobby->id)->delay(now()->addSeconds(8));
+    }
+
+    public function restartRound(Lobby $lobby): bool
     {
         $lobby->load('players');
         $language = $lobby->settings['language'] ?? 'en';
@@ -545,6 +628,27 @@ class GameController extends Controller
         broadcast(new \App\Events\GameStarted($lobby, $word));
 
         return true;
+    }
+
+    /**
+     * Restart the game (called by host after game ends).
+     */
+    public function restartGame(string $code): \Illuminate\Http\JsonResponse
+    {
+        $lobby = Lobby::where('code', strtoupper($code))->with('players')->firstOrFail();
+        $this->validateHost($lobby);
+
+        if ($lobby->status !== 'finished') {
+            return response()->json(['error' => 'Game is not finished'], 400);
+        }
+
+        $restarted = $this->restartRound($lobby);
+
+        if (! $restarted) {
+            return response()->json(['error' => 'Failed to restart game'], 500);
+        }
+
+        return response()->json(['success' => true]);
     }
 
     /**

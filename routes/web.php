@@ -30,3 +30,6 @@ Route::post('/game/{code}/next-turn', [GameController::class, 'nextTurn'])->name
 // Vote features
 Route::post('/game/{code}/vote-now', [GameController::class, 'voteNow'])->name('game.vote-now');
 Route::post('/game/{code}/vote-reroll', [GameController::class, 'voteReroll'])->name('game.vote-reroll');
+
+// Auto-restart (host only)
+Route::post('/game/{code}/restart', [GameController::class, 'restartGame'])->name('game.restart');

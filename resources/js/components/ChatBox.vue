@@ -136,13 +136,13 @@ onUnmounted(() => {
 <template>
     <div class="glass-card flex h-full flex-col overflow-hidden rounded-2xl">
         <!-- Header -->
-        <div class="flex-shrink-0 border-b border-white/5 px-4 py-3">
+        <div class="flex-shrink-0 border-b border-void-border px-4 py-3">
             <div class="mb-2 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20">
                         <MessageSquare class="h-4 w-4 text-blue-400" />
                     </div>
-                    <h3 class="font-bold text-white">Chat</h3>
+                    <h3 class="font-bold text-text-primary">Chat</h3>
                     <span v-if="unreadCount > 0" class="animate-bounce-in rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
                         {{ unreadCount }}
                     </span>
@@ -151,12 +151,9 @@ onUnmounted(() => {
 
             <!-- DM Selector -->
             <div class="flex items-center gap-2">
-                <span class="text-xs text-gray-400">To:</span>
+                <span class="text-xs text-text-secondary">To:</span>
                 <div class="relative flex-1">
-                    <select
-                        v-model="selectedRecipient"
-                        class="w-full appearance-none rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-1.5 text-xs text-white transition-colors focus:border-blue-500"
-                    >
+                    <select v-model="selectedRecipient" class="input-field w-full appearance-none rounded-lg px-3 py-1.5 text-xs text-text-primary">
                         <option :value="null">
                             <span class="flex items-center gap-1">
                                 <Users class="h-3 w-3" />
@@ -167,14 +164,14 @@ onUnmounted(() => {
                             {{ player.name }}
                         </option>
                     </select>
-                    <ChevronDown class="pointer-events-none absolute top-1/2 right-2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                    <ChevronDown class="pointer-events-none absolute top-1/2 right-2 h-3 w-3 -translate-y-1/2 text-text-secondary" />
                 </div>
             </div>
         </div>
 
         <!-- DM Notification -->
         <Transition name="slide-down">
-            <div v-if="showDMNotification" class="flex items-center gap-2 bg-purple-600/90 px-3 py-2 text-xs text-white">
+            <div v-if="showDMNotification" class="flex items-center gap-2 bg-blue-600/90 px-3 py-2 text-xs text-white">
                 <Bell class="h-3 w-3" />
                 New DM from {{ dmNotificationSender }}
             </div>
@@ -186,7 +183,7 @@ onUnmounted(() => {
                 <div
                     :class="[
                         'max-w-[85%] rounded-xl px-3 py-2 text-sm',
-                        isOwnMessage(message) ? 'rounded-br-none bg-blue-600 text-white' : 'glass-light rounded-bl-none text-gray-100',
+                        isOwnMessage(message) ? 'rounded-br-none bg-blue-600 text-white' : 'glass-light rounded-bl-none text-text-primary',
                     ]"
                 >
                     <div class="mb-0.5 flex items-center gap-1">
@@ -198,8 +195,8 @@ onUnmounted(() => {
             </div>
 
             <!-- DM Section -->
-            <div v-if="dmMessages.length > 0" class="mt-3 border-t border-purple-500/30 pt-3">
-                <div class="mb-2 flex items-center gap-1 text-xs text-purple-400">
+            <div v-if="dmMessages.length > 0" class="mt-3 border-t border-blue-500/30 pt-3">
+                <div class="mb-2 flex items-center gap-1 text-xs text-blue-400">
                     <Lock class="h-3 w-3" />
                     Private Messages
                 </div>
@@ -212,8 +209,8 @@ onUnmounted(() => {
                         :class="[
                             'max-w-[85%] rounded-xl px-3 py-2 text-sm',
                             isOwnMessage(message)
-                                ? 'rounded-br-none bg-purple-600 text-white'
-                                : 'rounded-bl-none border border-purple-500/30 bg-purple-900/40 text-purple-100',
+                                ? 'rounded-br-none bg-blue-600 text-white'
+                                : 'rounded-bl-none border border-blue-500/30 bg-blue-900/30 text-blue-100',
                         ]"
                     >
                         <div class="mb-0.5 flex items-center gap-1">
@@ -226,7 +223,10 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <div v-if="publicMessages.length === 0 && dmMessages.length === 0" class="flex h-32 flex-col items-center justify-center text-gray-500">
+            <div
+                v-if="publicMessages.length === 0 && dmMessages.length === 0"
+                class="flex h-32 flex-col items-center justify-center text-text-tertiary"
+            >
                 <MessageSquare class="mb-2 h-8 w-8 opacity-30" />
                 <p class="text-xs">No messages yet</p>
                 <p class="text-xs opacity-70">Start the conversation!</p>
@@ -234,7 +234,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Input -->
-        <div class="flex-shrink-0 border-t border-white/5 p-3">
+        <div class="flex-shrink-0 border-t border-void-border p-3">
             <form @submit.prevent="sendMessage" class="flex gap-2">
                 <input
                     v-model="newMessage"
@@ -242,12 +242,12 @@ onUnmounted(() => {
                     :placeholder="selectedRecipient ? 'Private message...' : 'Type a message...'"
                     maxlength="500"
                     :disabled="isLoading"
-                    class="flex-1 rounded-xl border border-gray-700 bg-gray-800/50 px-3 py-2 text-sm text-white placeholder-gray-500 transition-colors focus:border-blue-500"
+                    class="input-field flex-1 rounded-xl px-3 py-2 text-sm text-text-primary placeholder-text-tertiary"
                 />
                 <button
                     type="submit"
                     :disabled="!newMessage.trim() || isLoading"
-                    class="btn-glass flex items-center justify-center rounded-xl bg-blue-600 px-3 py-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                    class="btn-primary flex items-center justify-center rounded-xl px-3 py-2 text-white disabled:opacity-50"
                 >
                     <Send v-if="!isLoading" class="h-4 w-4" />
                     <div v-else class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>

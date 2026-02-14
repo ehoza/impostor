@@ -23,9 +23,7 @@ const emit = defineEmits<{
 }>();
 
 const activePlayers = computed(() => {
-    return props.players
-        .filter((p) => !p.is_eliminated)
-        .sort((a, b) => (a.turn_position ?? 999) - (b.turn_position ?? 999));
+    return props.players.filter((p) => !p.is_eliminated).sort((a, b) => (a.turn_position ?? 999) - (b.turn_position ?? 999));
 });
 
 const currentTurnPlayer = computed(() => {
@@ -55,9 +53,9 @@ function positionOnCircle(index: number, total: number): { left: string; top: st
     const angleRad = (angleDeg * Math.PI) / 180;
     const x = Math.cos(angleRad) * RADIUS_PX;
     const y = Math.sin(angleRad) * RADIUS_PX;
-    return { 
-        left: `calc(50% + ${x}px)`, 
-        top: `calc(50% + ${y}px)` 
+    return {
+        left: `calc(50% + ${x}px)`,
+        top: `calc(50% + ${y}px)`,
     };
 }
 
@@ -75,64 +73,66 @@ const arrowRotationDeg = computed(() => {
 });
 
 // Arrow should extend from center to the player circle
-const arrowLength = computed(() => RADIUS_PX - (CENTER_SIZE / 2) + 10);
+const arrowLength = computed(() => RADIUS_PX - CENTER_SIZE / 2 + 10);
 </script>
 
 <template>
     <div class="turn-indicator">
         <!-- Turns played counter -->
         <div class="mb-4 flex justify-center">
-            <div class="rounded-full border border-gray-600/50 bg-gray-800/90 px-4 py-1.5 text-sm font-bold text-white shadow-lg backdrop-blur-sm">
-                <span class="text-gray-400">Turns played:</span>
-                <span class="ml-2 text-amber-400">{{ turnsPlayed }}</span>
+            <div
+                class="rounded-full border border-void-border bg-void-elevated px-4 py-1.5 text-sm font-bold text-text-primary shadow-lg backdrop-blur-sm"
+            >
+                <span class="text-text-secondary">Turns played:</span>
+                <span class="ml-2 text-blue-400">{{ turnsPlayed }}</span>
             </div>
         </div>
 
         <!-- Circle area -->
-        <div class="relative mx-auto w-full max-w-[320px]" style="height: 280px;">
+        <div class="relative mx-auto w-full max-w-[320px]" style="height: 280px">
             <!-- Background circle track -->
             <div
-                class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-gray-600/30"
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-void-border/50"
                 :style="{ width: `${RADIUS_PX * 2}px`, height: `${RADIUS_PX * 2}px` }"
             ></div>
 
             <!-- Rotating Arrow - positioned BEHIND center but IN FRONT of background -->
             <div
                 v-if="currentTurnIndexInCircle >= 0 && circlePlayers.length > 0"
-                class="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 origin-center transition-transform duration-500 ease-out"
+                class="absolute top-1/2 left-1/2 z-10 origin-center -translate-x-1/2 -translate-y-1/2 transition-transform duration-500 ease-out"
                 :style="{ transform: `rotate(${arrowRotationDeg}deg)` }"
             >
                 <!-- Arrow shaft extending from center outward -->
-                <div 
+                <div
                     class="relative flex items-center"
-                    :style="{ 
+                    :style="{
                         width: `${arrowLength}px`,
-                        transform: `translateX(${CENTER_SIZE/2}px)` // Start from edge of center circle
+                        transform: `translateX(${CENTER_SIZE / 2}px)`, // Start from edge of center circle
                     }"
                 >
-                    <div class="h-2 w-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg shadow-amber-500/50"></div>
-                    <ArrowRight class="absolute -right-1 h-6 w-6 flex-shrink-0 text-orange-500" stroke-width="3" />
+                    <div class="h-2 w-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 shadow-lg shadow-blue-500/50"></div>
+                    <ArrowRight class="absolute -right-1 h-6 w-6 flex-shrink-0 text-blue-400" stroke-width="3" />
                 </div>
             </div>
 
-            <!-- Center Bomb/Indicator -->
-            <div class="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
+            <!-- Center Indicator -->
+            <div class="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
                 <div
                     class="relative flex h-16 w-16 items-center justify-center rounded-full shadow-xl transition-all duration-300"
                     :class="[
                         isMyTurn
-                            ? 'animate-pulse bg-gradient-to-br from-amber-400 to-orange-600 shadow-amber-500/50 ring-4 ring-amber-500/30'
-                            : 'border-2 border-gray-500 bg-gray-800 shadow-black/50'
+                            ? 'animate-pulse bg-gradient-to-br from-blue-400 to-blue-600 ring-4 shadow-blue-500/50 ring-blue-500/30'
+                            : 'border-2 border-void-border bg-void-elevated shadow-black/50',
                     ]"
                 >
-                    <!-- Bomb fuse decoration when it's user's turn -->
-                    <div v-if="isMyTurn" class="absolute -inset-1 rounded-full animate-ping bg-amber-400/20"></div>
-                    
-                    <div class="text-center relative z-10">
-                        <div class="text-2xl font-black leading-none" :class="isMyTurn ? 'text-white' : 'text-amber-400'">
+                    <!-- Pulse decoration when it's user's turn -->
+                    <div v-if="isMyTurn" class="absolute -inset-1 animate-ping rounded-full bg-blue-400/20"></div>
+
+                    <div class="relative z-10 text-center">
+                        <div class="text-2xl leading-none font-black" :class="isMyTurn ? 'text-white' : 'text-blue-400'">
                             {{ currentTurnIndexInCircle >= 0 ? currentTurnIndexInCircle + 1 : '–' }}
                         </div>
-                        <div class="text-xs font-medium tracking-wider text-gray-500">/{{ circlePlayers.length }}</div>
+                        <div class="text-xs font-medium tracking-wider text-text-tertiary">/{{ circlePlayers.length }}</div>
                     </div>
                 </div>
             </div>
@@ -156,18 +156,18 @@ const arrowLength = computed(() => RADIUS_PX - (CENTER_SIZE / 2) + 10);
                         class="flex h-12 w-12 items-center justify-center rounded-xl text-base font-bold shadow-lg transition-all duration-300"
                         :class="[
                             player.id === currentTurnPlayerId
-                                ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-amber-500/40 ring-2 ring-white/50'
-                                : 'bg-gray-700/80 text-gray-300 border border-gray-600/50 backdrop-blur-sm',
-                            player.id === currentPlayerId ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-gray-900' : ''
+                                ? 'bg-gradient-to-br from-blue-400 to-blue-500 text-white ring-2 shadow-blue-500/40 ring-white/50'
+                                : 'border border-void-border bg-void-hover text-text-secondary backdrop-blur-sm',
+                            player.id === currentPlayerId ? 'ring-offset-void ring-2 ring-blue-400 ring-offset-2' : '',
                         ]"
                     >
                         {{ player.name.charAt(0).toUpperCase() }}
                     </div>
-                    
+
                     <!-- Player name -->
                     <span
-                        class="max-w-[80px] truncate rounded-full bg-gray-900/90 px-2.5 py-1 text-center text-xs font-bold shadow-lg backdrop-blur-sm"
-                        :class="player.id === currentTurnPlayerId ? 'text-amber-300 bg-gray-800' : 'text-gray-400'"
+                        class="max-w-[80px] truncate rounded-full bg-void-elevated px-2.5 py-1 text-center text-xs font-bold shadow-lg backdrop-blur-sm"
+                        :class="player.id === currentTurnPlayerId ? 'bg-void-hover text-blue-400' : 'text-text-secondary'"
                     >
                         {{ player.name.length > 8 ? player.name.slice(0, 7) + '…' : player.name }}
                     </span>
@@ -180,13 +180,13 @@ const arrowLength = computed(() => RADIUS_PX - (CENTER_SIZE / 2) + 10);
             <div
                 class="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300"
                 :class="[
-                    isMyTurn 
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-lg shadow-amber-500/20 scale-105' 
-                        : 'bg-gray-800/80 text-gray-400 border border-gray-700'
+                    isMyTurn
+                        ? 'scale-105 border border-blue-500/50 bg-blue-500/20 text-blue-300 shadow-lg shadow-blue-500/20'
+                        : 'border border-void-border bg-void-elevated text-text-secondary',
                 ]"
             >
                 <template v-if="isMyTurn">
-                    <Crown class="h-5 w-5 text-amber-400" />
+                    <Crown class="h-5 w-5 text-blue-400" />
                     <span>Your Turn!</span>
                 </template>
                 <template v-else-if="currentTurnPlayer">
@@ -197,12 +197,12 @@ const arrowLength = computed(() => RADIUS_PX - (CENTER_SIZE / 2) + 10);
                     <span>Waiting...</span>
                 </template>
             </div>
-            
+
             <button
                 v-if="isMyTurn"
                 type="button"
                 @click="emit('next-turn')"
-                class="group flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-8 py-3 text-base font-bold text-white shadow-xl shadow-orange-500/30 transition-all hover:scale-105 hover:shadow-orange-500/50 active:scale-95"
+                class="btn-primary group flex items-center justify-center gap-2 rounded-xl px-8 py-3 text-base font-bold text-white shadow-xl shadow-blue-500/30 transition-all hover:scale-105 hover:shadow-blue-500/50 active:scale-95"
             >
                 End My Turn
                 <ChevronRight class="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -214,7 +214,10 @@ const arrowLength = computed(() => RADIUS_PX - (CENTER_SIZE / 2) + 10);
 <style scoped>
 .turn-indicator {
     min-width: 0;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
 }
 
 /* Smooth transitions for all interactive elements */

@@ -10,7 +10,7 @@ This is a **social deduction multiplayer game** where players join lobbies, rece
 - **Lobby System**: Create/join lobbies with auto-generated 6-character codes
 - **Turn-Based Gameplay**: Players take turns describing their word without revealing it
 - **Real-Time Updates**: Game state polling (2-second intervals) with broadcasting events
-- **Configurable Settings**: Impostor count, max players, discussion time, voting time, word difficulty
+- **Configurable Settings**: Impostor count, max players, discussion time, voting time, word difficulty, language (en/ro)
 - **Chat System**: Public chat and private DMs between players
 - **Voting Mechanics**: Vote to start voting immediately (70% threshold) or reroll words
 - **Win Tracking**: Persistent win counters for impostors and crew across multiple rounds
@@ -20,7 +20,7 @@ This is a **social deduction multiplayer game** where players join lobbies, rece
 
 | Component | Version | Purpose |
 |-----------|---------|---------|
-| PHP | ^8.2 (8.4 recommended) | Backend language |
+| PHP | ^8.2 | Backend language |
 | Laravel | ^12.0 | Backend framework |
 | Inertia.js | ^2.0 | SPA without API complexity |
 | Vue.js | ^3.5 | Frontend framework |
@@ -78,7 +78,10 @@ resources/js/
 ├── components/             # Reusable Vue components
 │   ├── ChatBox.vue         # Chat with public/DM support
 │   ├── TurnIndicator.vue   # Turn display and controls
-│   └── VoteButton.vue      # Vote now/reroll buttons
+│   ├── VoteButton.vue      # Vote now/reroll buttons
+│   └── ThemeToggle.vue     # Dark/light mode toggle
+├── composables/            # Vue composables
+│   └── useTheme.ts         # Theme management
 ├── routes/                 # Wayfinder generated routes (auto-generated)
 ├── actions/                # Wayfinder generated actions (auto-generated)
 ├── types/                  # TypeScript type definitions
@@ -215,7 +218,7 @@ php artisan make:test --pest TestName
 - CSS-first configuration via `@theme` directive
 - Custom animations and utilities defined in `resources/css/app.css`
 - Use `gap-*` for spacing between siblings
-- Custom classes: `.glass`, `.card-hover`, `.btn-animate`, `.gradient-text`
+- Custom classes: `.glass`, `.glass-card`, `.btn-primary`, `.btn-secondary`, `.gradient-text`
 
 ## Key Architectural Patterns
 
@@ -320,6 +323,7 @@ php artisan make:test --pest TestName
     'discussion_time' => 60,
     'voting_time' => 30,
     'word_difficulty' => 3,
+    'language' => 'en',
 ]
 ```
 
