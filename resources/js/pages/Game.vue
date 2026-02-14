@@ -117,6 +117,8 @@ const showDMNotification = ref(false);
 const dmNotificationText = ref('');
 const autoRestartCountdown = ref(0);
 const autoRestartTimer = ref<number | null>(null);
+const previousTurnPlayerId = ref<number | null>(null);
+const endedTurnPlayerId = ref<number | null>(null);
 
 let polling: number | null = null;
 
@@ -210,12 +212,39 @@ const fetchGameState = async () => {
         const oldVoteNowCount = gameState.value.vote_now?.count || 0;
         const oldRerollCount = gameState.value.reroll?.count || 0;
         const wasFinished = gameState.value.status === 'finished';
+        const oldTurnPlayerId = gameState.value.current_turn_player_id ?? null;
+
+        const isNewRound = wasFinished && response.data.status === 'playing' && response.data.game_result == null;
+        if (isNewRound) {
+            gameResult.value = null;
+            eliminatedPlayer.value = null;
+            showImpostorReveal.value = false;
+            autoRestartCountdown.value = 0;
+            endedTurnPlayerId.value = null;
+            if (autoRestartTimer.value) {
+                clearInterval(autoRestartTimer.value);
+                autoRestartTimer.value = null;
+            }
+        }
 
         gameState.value = response.data;
         votingPhase.value = !!gameState.value.voting_phase;
 
         if (response.data.elimination_votes) {
             gameState.value.elimination_votes = response.data.elimination_votes;
+        }
+
+        if (response.data.voting_phase || response.data.game_result) {
+            endedTurnPlayerId.value = null;
+        }
+        if (response.data.status === 'playing' && !response.data.voting_phase && !response.data.game_result) {
+            const newTurnPlayerId = response.data.current_turn_player_id ?? null;
+            if (oldTurnPlayerId !== null && newTurnPlayerId !== oldTurnPlayerId) {
+                endedTurnPlayerId.value = oldTurnPlayerId;
+            }
+            previousTurnPlayerId.value = newTurnPlayerId;
+        } else {
+            previousTurnPlayerId.value = response.data.current_turn_player_id ?? null;
         }
 
         // Handle auto-restart countdown
@@ -240,14 +269,18 @@ const fetchGameState = async () => {
             gameResult.value = response.data.game_result;
         }
         if (response.data.status === 'playing' && response.data.game_result == null) {
-            gameResult.value = null;
-            eliminatedPlayer.value = null;
-            showImpostorReveal.value = false;
-            autoRestartCountdown.value = 0;
-            if (autoRestartTimer.value) {
-                clearInterval(autoRestartTimer.value);
-                autoRestartTimer.value = null;
+            if (!isNewRound) {
+                gameResult.value = null;
+                eliminatedPlayer.value = null;
+                showImpostorReveal.value = false;
+                autoRestartCountdown.value = 0;
+                endedTurnPlayerId.value = null;
+                if (autoRestartTimer.value) {
+                    clearInterval(autoRestartTimer.value);
+                    autoRestartTimer.value = null;
+                }
             }
+            previousTurnPlayerId.value = response.data.current_turn_player_id ?? null;
         }
     } catch (error) {
         console.error('Failed to fetch game state:', error);
@@ -625,18 +658,20 @@ onUnmounted(() => {
                                 <div
                                     v-for="player in activePlayers"
                                     :key="player.id"
-                                    class="flex items-center gap-1.5 rounded-lg px-2 py-1"
-                                    :class="
-                                        player.id === gameState.current_turn_player_id ? 'bg-blue-500/20 ring-1 ring-blue-500/30' : 'bg-void-hover'
-                                    "
+                                    class="flex items-center gap-1.5 rounded-lg px-2 py-1 transition-all duration-300"
+                                    :class="[
+                                        player.id === gameState.current_turn_player_id ? 'bg-blue-500/20 ring-1 ring-blue-500/30' : 'bg-void-hover',
+                                        player.id === endedTurnPlayerId ? 'ring-2 ring-green-500/80 ring-offset-2 ring-offset-void' : '',
+                                    ]"
                                 >
                                     <div
                                         class="flex h-6 w-6 items-center justify-center overflow-hidden rounded-md text-xs font-bold"
-                                        :class="
+                                        :class="[
                                             player.id === gameState.current_turn_player_id
                                                 ? 'bg-blue-500 text-white'
-                                                : 'bg-void-elevated text-text-secondary'
-                                        "
+                                                : 'bg-void-elevated text-text-secondary',
+                                            player.id === endedTurnPlayerId ? 'ring-2 ring-green-500' : '',
+                                        ]"
                                     >
                                         <img
                                             v-if="player.avatar"
@@ -729,7 +764,10 @@ onUnmounted(() => {
                                 >
                                     <div
                                         class="flex flex-col items-center gap-1 transition-all duration-300"
-                                        :class="player.id === gameState.current_turn_player_id ? 'scale-110' : 'opacity-70 hover:opacity-100'"
+                                        :class="[
+                                            player.id === gameState.current_turn_player_id ? 'scale-110' : 'opacity-70 hover:opacity-100',
+                                            player.id === endedTurnPlayerId ? 'ring-2 ring-green-500 rounded-xl ring-offset-2 ring-offset-void' : '',
+                                        ]"
                                     >
                                         <div
                                             class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg text-xs font-bold shadow-lg transition-all duration-300 sm:h-10 sm:w-10 sm:text-sm"
@@ -738,6 +776,7 @@ onUnmounted(() => {
                                                     ? 'bg-blue-500 text-white ring-2 shadow-blue-500/40 ring-white/50'
                                                     : 'bg-void-hover text-text-secondary',
                                                 player.id === current_player.id ? 'ring-offset-void ring-2 ring-blue-400 ring-offset-2' : '',
+                                                player.id === endedTurnPlayerId ? 'ring-2 ring-green-500 ring-offset-1 ring-offset-void' : '',
                                             ]"
                                         >
                                             <img

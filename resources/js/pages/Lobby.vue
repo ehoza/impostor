@@ -24,7 +24,7 @@ import {
     LogIn,
     ArrowRight,
 } from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import AvatarSelectionModal from '@/components/AvatarSelectionModal.vue';
 import { play, start, state } from '@/routes/game';
 import { leave, settings } from '@/routes/lobby';
@@ -162,7 +162,28 @@ const handleVisibilityChange = () => {
 
 const POLL_INTERVAL_MS = 1000;
 
+const redirectToGameIfStarted = () => {
+    if (props.lobby?.status === 'playing' && props.current_player) {
+        if (polling.value) {
+            clearInterval(polling.value);
+            polling.value = null;
+        }
+        router.visit(play.url(props.lobby.code));
+    }
+};
+
+watch(
+    () => props.lobby?.status,
+    (status) => {
+        if (status === 'playing') {
+            redirectToGameIfStarted();
+        }
+    },
+    { immediate: true }
+);
+
 onMounted(() => {
+    redirectToGameIfStarted();
     if (props.current_player) {
         pollLobby();
         polling.value = window.setInterval(pollLobby, POLL_INTERVAL_MS);
