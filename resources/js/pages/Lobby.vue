@@ -26,7 +26,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import AvatarSelectionModal from '@/components/AvatarSelectionModal.vue';
-import { play, start, state } from '@/routes/game';
+import { play, start } from '@/routes/game';
 import { leave, settings } from '@/routes/lobby';
 import { avatarUrl } from '@/lib/avatars';
 
@@ -143,13 +143,16 @@ const updateSettings = () => {
 
 const pollLobby = async () => {
     try {
-        const response = await axios.get(state.url(props.lobby.code));
-        if (response.data.status === 'playing') {
-            router.visit(play.url(props.lobby.code));
+        const statusResponse = await axios.get(`/lobby/${props.lobby.code}/status`);
+        if (statusResponse.data.status === 'playing') {
+            redirectToGameIfStarted();
             return;
         }
         await router.reload({ only: ['lobby', 'players'] });
     } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+            return;
+        }
         console.error('Polling error:', error);
     }
 };
@@ -160,7 +163,7 @@ const handleVisibilityChange = () => {
     }
 };
 
-const POLL_INTERVAL_MS = 1000;
+const POLL_INTERVAL_MS = 500;
 
 const redirectToGameIfStarted = () => {
     if (props.lobby?.status === 'playing' && props.current_player) {

@@ -345,11 +345,16 @@ const voteForSkip = () => {
 const submitVote = async () => {
     if (hasVotedElimination.value) return;
     try {
-        await axios.post(vote.url(props.code), {
+        const response = await axios.post(vote.url(props.code), {
             target_player_id: selectedSkip.value ? null : selectedPlayerId.value,
         });
         selectedPlayerId.value = null;
         selectedSkip.value = false;
+        if (response.data.round_restarted) {
+            gameResult.value = null;
+            eliminatedPlayer.value = null;
+            showImpostorReveal.value = false;
+        }
         await fetchGameState();
     } catch (error) {
         console.error('Failed to vote:', error);
@@ -359,9 +364,14 @@ const submitVote = async () => {
 const submitSkipVote = async () => {
     if (hasVotedElimination.value) return;
     try {
-        await axios.post(vote.url(props.code), { target_player_id: null });
+        const response = await axios.post(vote.url(props.code), { target_player_id: null });
         selectedPlayerId.value = null;
         selectedSkip.value = false;
+        if (response.data.round_restarted) {
+            gameResult.value = null;
+            eliminatedPlayer.value = null;
+            showImpostorReveal.value = false;
+        }
         await fetchGameState();
     } catch (error) {
         console.error('Failed to skip vote:', error);
@@ -378,7 +388,11 @@ const endVotingPhase = async () => {
         if (response.data.eliminated) {
             showImpostorReveal.value = true;
         }
-        if (response.data.auto_restart) {
+        if (response.data.round_restarted) {
+            gameResult.value = null;
+            eliminatedPlayer.value = null;
+            showImpostorReveal.value = false;
+        } else if (response.data.auto_restart) {
             startAutoRestartCountdown();
         }
         await fetchGameState();

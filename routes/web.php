@@ -11,6 +11,7 @@ Route::get('/', function () {
 Route::post('/lobby/create', [GameController::class, 'createLobby'])->name('lobby.create');
 Route::post('/lobby/join/{code}', [GameController::class, 'joinLobby'])->name('lobby.join');
 Route::get('/lobby/{code}', [GameController::class, 'showLobby'])->name('lobby.show');
+Route::get('/lobby/{code}/status', [GameController::class, 'lobbyStatus'])->name('lobby.status');
 Route::post('/lobby/{code}/start', [GameController::class, 'startGame'])->name('game.start');
 Route::post('/lobby/{code}/settings', [GameController::class, 'updateSettings'])->name('lobby.settings');
 Route::post('/lobby/{code}/leave', [GameController::class, 'leaveLobby'])->name('lobby.leave');

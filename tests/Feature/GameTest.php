@@ -23,6 +23,23 @@ test('can create a lobby', function () {
     ]);
 });
 
+test('lobby status endpoint returns status without session', function () {
+    Lobby::factory()->create(['code' => 'STATUS', 'status' => 'waiting']);
+
+    $response = $this->getJson(route('lobby.status', 'STATUS'));
+
+    $response->assertOk()->assertJson(['status' => 'waiting']);
+
+    Lobby::where('code', 'STATUS')->update(['status' => 'playing']);
+    $response2 = $this->getJson(route('lobby.status', 'STATUS'));
+    $response2->assertOk()->assertJson(['status' => 'playing']);
+});
+
+test('lobby status returns 404 for unknown code', function () {
+    $this->getJson(route('lobby.status', 'NONEXIST'))
+        ->assertNotFound();
+});
+
 test('can join an existing lobby', function () {
     $lobby = Lobby::factory()->create(['code' => 'TEST123', 'status' => 'waiting']);
 

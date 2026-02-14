@@ -140,6 +140,20 @@ class GameController extends Controller
     }
 
     /**
+     * Return lobby status (for polling from lobby page; no session required).
+     */
+    public function lobbyStatus(string $code): \Illuminate\Http\JsonResponse
+    {
+        $lobby = Lobby::where('code', strtoupper($code))->first();
+
+        if (! $lobby) {
+            return response()->json(['error' => 'Lobby not found'], 404);
+        }
+
+        return response()->json(['status' => $lobby->status]);
+    }
+
+    /**
      * Show game page.
      */
     public function showGame(string $code): \Inertia\Response|\Illuminate\Http\RedirectResponse
@@ -483,8 +497,7 @@ class GameController extends Controller
                 ]);
                 broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'impostor_wins'));
 
-                // Auto-restart after delay
-                $this->scheduleAutoRestart($lobby);
+                $roundRestarted = $this->restartRound($lobby->fresh());
 
                 return response()->json([
                     'success' => true,
@@ -496,6 +509,7 @@ class GameController extends Controller
                     'was_impostor' => false,
                     'game_result' => 'impostor_wins',
                     'auto_restart' => true,
+                    'round_restarted' => $roundRestarted,
                 ]);
             } else {
                 $lobby->update([
@@ -505,8 +519,7 @@ class GameController extends Controller
                 ]);
                 broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'crew_wins'));
 
-                // Auto-restart after delay
-                $this->scheduleAutoRestart($lobby);
+                $roundRestarted = $this->restartRound($lobby->fresh());
 
                 return response()->json([
                     'success' => true,
@@ -518,6 +531,7 @@ class GameController extends Controller
                     'was_impostor' => $eliminatedPlayer->is_impostor,
                     'game_result' => 'crew_wins',
                     'auto_restart' => true,
+                    'round_restarted' => $roundRestarted,
                 ]);
             }
         }
@@ -530,8 +544,7 @@ class GameController extends Controller
             ]);
             broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'impostor_wins'));
 
-            // Auto-restart after delay
-            $this->scheduleAutoRestart($lobby);
+            $roundRestarted = $this->restartRound($lobby->fresh());
 
             return response()->json([
                 'success' => true,
@@ -543,6 +556,7 @@ class GameController extends Controller
                 'was_impostor' => $eliminatedPlayer->is_impostor,
                 'game_result' => 'impostor_wins',
                 'auto_restart' => true,
+                'round_restarted' => $roundRestarted,
             ]);
         }
 
@@ -555,8 +569,7 @@ class GameController extends Controller
                     'status' => 'finished',
                     'game_result' => 'crew_wins',
                 ]);
-                // Auto-restart after delay
-                $this->scheduleAutoRestart($lobby);
+                $restarted = $this->restartRound($lobby->fresh());
             }
 
             broadcast(new \App\Events\VotingEnded($lobby, $eliminatedPlayer, 'crew_wins'));
