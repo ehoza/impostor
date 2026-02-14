@@ -14,6 +14,7 @@ const emit = defineEmits<{
 
 const select = (avatar: string) => {
     emit('update:modelValue', avatar);
+    emit('close');
 };
 </script>
 

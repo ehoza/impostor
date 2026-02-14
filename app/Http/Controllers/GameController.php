@@ -142,7 +142,7 @@ class GameController extends Controller
     /**
      * Show game page.
      */
-    public function showGame(string $code): \Inertia\Response
+    public function showGame(string $code): \Inertia\Response|\Illuminate\Http\RedirectResponse
     {
         $lobby = Lobby::where('code', strtoupper($code))
             ->with(['players', 'currentTurnPlayer'])
@@ -209,8 +209,8 @@ class GameController extends Controller
 
         $this->validateHost($lobby);
 
-        if ($lobby->players->count() < 2) {
-            return response()->json(['error' => 'Need at least 2 players'], 400);
+        if ($lobby->players->count() < 3) {
+            return response()->json(['error' => 'Need at least 3 players to start'], 400);
         }
 
         $language = $lobby->settings['language'] ?? 'en';
@@ -223,18 +223,25 @@ class GameController extends Controller
         $playerIds = $lobby->players->pluck('id')->shuffle()->values()->all();
         $turnOrder = $playerIds;
 
-        $eligibleForImpostor = $lobby->players->filter(fn ($p) => ($p->impostor_streak ?? 0) < 3);
+        $eligibleForImpostor = $lobby->players->filter(fn ($p) => ($p->impostor_streak ?? 0) < 3 && ($p->impostor_cooldown ?? 0) === 0);
         $impostorPool = $eligibleForImpostor->isEmpty() ? $lobby->players : $eligibleForImpostor;
         $impostorCount = min($lobby->settings['impostor_count'] ?? 1, $impostorPool->count());
         $impostorIds = $impostorPool->pluck('id')->shuffle()->take($impostorCount)->all();
 
         foreach ($lobby->players as $player) {
             $isImpostor = in_array($player->id, $impostorIds);
+            $currentStreak = (int) ($player->impostor_streak ?? 0);
+            $currentCooldown = (int) ($player->impostor_cooldown ?? 0);
+            $newStreak = $isImpostor ? $currentStreak + 1 : 0;
+            $newCooldown = $isImpostor
+                ? ($newStreak >= 3 ? 2 : $currentCooldown)
+                : max(0, $currentCooldown - 1);
             $player->update([
                 'is_impostor' => $isImpostor,
                 'word_id' => $isImpostor ? $word->impostor_word_id : $word->id,
                 'is_eliminated' => false,
-                'impostor_streak' => $isImpostor ? 1 : 0,
+                'impostor_streak' => $newStreak,
+                'impostor_cooldown' => $newCooldown,
                 'has_voted_vote_now' => false,
                 'has_voted_reroll' => false,
                 'turn_position' => array_search($player->id, $turnOrder),
@@ -618,7 +625,7 @@ class GameController extends Controller
         }
 
         $allPlayers = $lobby->players;
-        $eligibleForImpostor = $allPlayers->filter(fn ($p) => ($p->impostor_streak ?? 0) < 3);
+        $eligibleForImpostor = $allPlayers->filter(fn ($p) => ($p->impostor_streak ?? 0) < 3 && ($p->impostor_cooldown ?? 0) === 0);
         $impostorPool = $eligibleForImpostor->isEmpty() ? $allPlayers : $eligibleForImpostor;
         $impostorCount = min($lobby->settings['impostor_count'] ?? 1, $impostorPool->count());
         $impostorIds = $impostorPool->pluck('id')->shuffle()->take($impostorCount)->all();
@@ -627,11 +634,18 @@ class GameController extends Controller
 
         foreach ($lobby->players as $player) {
             $isImpostor = in_array($player->id, $impostorIds);
+            $currentStreak = (int) ($player->impostor_streak ?? 0);
+            $currentCooldown = (int) ($player->impostor_cooldown ?? 0);
+            $newStreak = $isImpostor ? $currentStreak + 1 : 0;
+            $newCooldown = $isImpostor
+                ? ($newStreak >= 3 ? 2 : $currentCooldown)
+                : max(0, $currentCooldown - 1);
             $player->update([
                 'is_impostor' => $isImpostor,
                 'word_id' => $isImpostor ? $word->impostor_word_id : $word->id,
                 'is_eliminated' => false,
-                'impostor_streak' => $isImpostor ? ($player->impostor_streak ?? 0) + 1 : 0,
+                'impostor_streak' => $newStreak,
+                'impostor_cooldown' => $newCooldown,
                 'has_voted_vote_now' => false,
                 'has_voted_reroll' => false,
                 'turn_position' => array_search($player->id, $playerIds) !== false ? array_search($player->id, $playerIds) : null,
@@ -658,12 +672,18 @@ class GameController extends Controller
     }
 
     /**
-     * Restart the game (called by host after game ends).
+     * Restart the game after it has ended. When status is 'finished', any player in the lobby
+     * may trigger restart (so auto-restart works even if the host left). Otherwise host only.
      */
     public function restartGame(string $code): \Illuminate\Http\JsonResponse
     {
         $lobby = Lobby::where('code', strtoupper($code))->with('players')->firstOrFail();
-        $this->validateHost($lobby);
+        $currentPlayerId = session('current_player_id');
+        $currentPlayer = $lobby->players()->find($currentPlayerId);
+
+        if (! $currentPlayer) {
+            return response()->json(['error' => 'Not in lobby'], 403);
+        }
 
         if ($lobby->status !== 'finished') {
             return response()->json(['error' => 'Game is not finished'], 400);

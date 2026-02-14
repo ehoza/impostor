@@ -262,10 +262,8 @@ const startAutoRestartCountdown = () => {
         if (autoRestartCountdown.value <= 0) {
             if (autoRestartTimer.value) clearInterval(autoRestartTimer.value);
             autoRestartTimer.value = null;
-            // Host triggers the restart
-            if (props.current_player?.is_host) {
-                triggerRestart();
-            }
+            // Any player can trigger restart when game is finished (backend allows it)
+            triggerRestart();
         }
     }, 1000);
 };
@@ -275,6 +273,10 @@ const triggerRestart = async () => {
         await axios.post(restart.url(props.code));
         await fetchGameState();
     } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 400 && error.response?.data?.error === 'Game is not finished') {
+            await fetchGameState();
+            return;
+        }
         console.error('Failed to restart game:', error);
     }
 };
@@ -593,10 +595,10 @@ onUnmounted(() => {
                                 </div>
                                 <div class="text-left">
                                     <h2 class="text-base font-black text-text-primary sm:text-3xl">
-                                        {{ gameResult === 'crew_wins' ? 'Crew Wins!' : 'Impostor Wins!' }}
+                                        {{ gameResult === 'crew_wins' ? 'Innocent Wins!' : 'Impostor Wins!' }}
                                     </h2>
                                     <p v-if="eliminatedPlayer" class="text-xs text-text-secondary sm:text-sm">
-                                        {{ eliminatedPlayer.name }} was {{ eliminatedPlayer.is_impostor ? 'the Impostor' : 'a Crew member' }}
+                                        {{ eliminatedPlayer.name }} was {{ eliminatedPlayer.is_impostor ? 'the Impostor' : 'Innocent' }}
                                     </p>
                                     <p v-if="autoRestartCountdown > 0" class="mt-1 text-xs font-bold text-amber-400 sm:mt-2 sm:text-sm">
                                         Next round in {{ autoRestartCountdown }}...
@@ -1006,7 +1008,7 @@ onUnmounted(() => {
                                     </p>
                                     <p class="text-xs text-text-secondary sm:text-sm">
                                         {{ eliminatedPlayer.name }} was
-                                        {{ eliminatedPlayer.is_impostor ? 'eliminated. Crew wins!' : 'eliminated. Game continues...' }}
+                                        {{ eliminatedPlayer.is_impostor ? 'eliminated. Innocent wins!' : 'eliminated. Game continues...' }}
                                     </p>
                                 </div>
                             </div>

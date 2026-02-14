@@ -80,6 +80,7 @@ test('host can start game with minimum players', function () {
     $lobby = Lobby::factory()->create(['code' => 'START1', 'status' => 'waiting']);
     $host = Player::factory()->create(['lobby_id' => $lobby->id, 'is_host' => true, 'session_id' => 'host-session']);
     Player::factory()->create(['lobby_id' => $lobby->id, 'name' => 'Player 2']);
+    Player::factory()->create(['lobby_id' => $lobby->id, 'name' => 'Player 3']);
 
     $word = Word::factory()->create(['is_impostor_word' => false]);
     $impostorWord = Word::factory()->create(['is_impostor_word' => true]);
@@ -102,6 +103,22 @@ test('cannot start game without enough players', function () {
     $this->withSession(['current_player_id' => $host->id])
         ->post(route('game.start', 'ALONE1'))
         ->assertStatus(400);
+});
+
+test('cannot start game with only two players', function () {
+    $lobby = Lobby::factory()->create(['code' => 'TWO12', 'status' => 'waiting']);
+    $host = Player::factory()->create(['lobby_id' => $lobby->id, 'is_host' => true, 'session_id' => 'host-session']);
+    Player::factory()->create(['lobby_id' => $lobby->id, 'name' => 'Player 2']);
+
+    $word = Word::factory()->create(['is_impostor_word' => false]);
+    $impostorWord = Word::factory()->create(['is_impostor_word' => true]);
+    $word->update(['impostor_word_id' => $impostorWord->id]);
+
+    $response = $this->withSession(['current_player_id' => $host->id])
+        ->postJson(route('game.start', 'TWO12'));
+
+    $response->assertStatus(400)
+        ->assertJson(['error' => 'Need at least 3 players to start']);
 });
 
 test('only host can start game', function () {
@@ -146,6 +163,7 @@ test('impostor gets different word than crew', function () {
     $lobby = Lobby::factory()->create(['code' => 'WORDS1', 'status' => 'waiting']);
     $host = Player::factory()->create(['lobby_id' => $lobby->id, 'is_host' => true, 'session_id' => 'host-session']);
     Player::factory()->create(['lobby_id' => $lobby->id, 'name' => 'Player 2']);
+    Player::factory()->create(['lobby_id' => $lobby->id, 'name' => 'Player 3']);
 
     $crewWord = Word::factory()->create(['word' => 'Măr', 'is_impostor_word' => false]);
     $impostorWord = Word::factory()->create(['word' => 'Pear', 'is_impostor_word' => true]);
