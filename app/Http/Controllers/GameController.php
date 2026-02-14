@@ -24,6 +24,7 @@ class GameController extends Controller
             'player_name' => 'required|string|max:30',
             'lobby_name' => 'nullable|string|max:50',
             'settings' => 'nullable|array',
+            'settings.language' => 'nullable|string|in:en,ro',
         ]);
 
         // Generate unique lobby code
@@ -204,7 +205,8 @@ class GameController extends Controller
             return response()->json(['error' => 'Need at least 2 players'], 400);
         }
 
-        $word = app(WordSelectionService::class)->selectWordForGame();
+        $language = $lobby->settings['language'] ?? 'en';
+        $word = app(WordSelectionService::class)->selectWordForGame($language);
 
         if (! $word) {
             return response()->json(['error' => 'No words available'], 500);
@@ -276,8 +278,8 @@ class GameController extends Controller
             return [
                 'id' => $player->id,
                 'name' => $player->name,
-                'is_host' => $player->is_host,
-                'is_eliminated' => $player->is_eliminated,
+                'is_host' => (bool) $player->is_host,
+                'is_eliminated' => (bool) $player->is_eliminated,
                 'turn_position' => $player->turn_position,
             ];
         });
@@ -498,7 +500,8 @@ class GameController extends Controller
     private function restartRound(Lobby $lobby): bool
     {
         $lobby->load('players');
-        $word = app(WordSelectionService::class)->selectWordForGame();
+        $language = $lobby->settings['language'] ?? 'en';
+        $word = app(WordSelectionService::class)->selectWordForGame($language);
 
         if (! $word) {
             return false;
@@ -587,7 +590,7 @@ class GameController extends Controller
     /**
      * Update lobby settings.
      */
-    public function updateSettings(Request $request, string $code): \Illuminate\Http\JsonResponse
+    public function updateSettings(Request $request, string $code): \Illuminate\Http\Response
     {
         $validated = $request->validate([
             'settings' => 'required|array',
@@ -596,6 +599,7 @@ class GameController extends Controller
             'settings.discussion_time' => 'nullable|integer|min:15|max:300',
             'settings.voting_time' => 'nullable|integer|min:15|max:180',
             'settings.word_difficulty' => 'nullable|integer|min:1|max:5',
+            'settings.language' => 'nullable|string|in:en,ro',
         ]);
 
         $lobby = Lobby::where('code', strtoupper($code))->firstOrFail();
@@ -605,7 +609,7 @@ class GameController extends Controller
 
         broadcast(new \App\Events\SettingsUpdated($lobby, $lobby->settings));
 
-        return response()->json(['success' => true, 'settings' => $lobby->settings]);
+        return back();
     }
 
     /**
@@ -765,10 +769,6 @@ class GameController extends Controller
             return response()->json(['error' => 'Cannot vote'], 403);
         }
 
-        if ($currentPlayer->is_impostor) {
-            return response()->json(['error' => 'Impostor cannot vote for reroll'], 403);
-        }
-
         $rerollVotes = $lobby->reroll_votes ?? [];
         if (in_array($currentPlayerId, $rerollVotes)) {
             return response()->json(['error' => 'Already voted'], 400);
@@ -882,7 +882,8 @@ class GameController extends Controller
      */
     private function rerollWordInternal(Lobby $lobby): void
     {
-        $word = app(WordSelectionService::class)->selectWordForGame();
+        $language = $lobby->settings['language'] ?? 'en';
+        $word = app(WordSelectionService::class)->selectWordForGame($language);
 
         if (! $word) {
             return;
@@ -955,6 +956,7 @@ class GameController extends Controller
             'discussion_time' => 60,
             'voting_time' => 30,
             'word_difficulty' => 3,
+            'language' => 'en',
         ];
     }
 }

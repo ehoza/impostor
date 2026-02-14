@@ -24,7 +24,7 @@ import {
     LogIn,
     ArrowRight,
 } from 'lucide-vue-next';
-import { onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { play, start, state } from '@/routes/game';
 import { leave, settings } from '@/routes/lobby';
 
@@ -39,6 +39,7 @@ const props = defineProps<{
             discussion_time: number;
             voting_time: number;
             word_difficulty: number;
+        language: 'en' | 'ro';
         };
         player_count: number;
     };
@@ -66,12 +67,16 @@ const settingsForm = useForm({
         discussion_time: props.lobby?.settings.discussion_time ?? 60,
         voting_time: props.lobby?.settings.voting_time ?? 30,
         word_difficulty: props.lobby?.settings.word_difficulty ?? 3,
+        language: props.lobby?.settings.language ?? 'en',
     },
 });
 
 const joinForm = useForm({
     player_name: '',
 });
+
+/** Server can return validation errors for keys like 'code' (e.g. lobby not found). */
+const joinFormErrors = computed(() => joinForm.errors as Record<string, string>);
 
 const lobbyLink = `${window.location.origin}/lobby/${props.lobby.code}`;
 
@@ -98,8 +103,24 @@ const copyCode = async () => {
     }
 };
 
-const startGame = () => {
-    router.post(start.url(props.lobby.code));
+const startGameLoading = ref(false);
+const startGameError = ref<string | null>(null);
+
+const startGame = async () => {
+    startGameError.value = null;
+    startGameLoading.value = true;
+    try {
+        await axios.post(start.url(props.lobby.code));
+        router.visit(play.url(props.lobby.code));
+    } catch (err: unknown) {
+        const msg =
+            axios.isAxiosError(err) && err.response?.data?.error
+                ? String(err.response.data.error)
+                : 'Failed to start game';
+        startGameError.value = msg;
+    } finally {
+        startGameLoading.value = false;
+    }
 };
 
 const leaveLobby = () => {
@@ -118,12 +139,12 @@ const updateSettings = () => {
 
 const pollLobby = async () => {
     try {
-        await router.reload({ only: ['lobby', 'players'] });
-
         const response = await axios.get(state.url(props.lobby.code));
         if (response.data.status === 'playing') {
-            window.location.href = play.url(props.lobby.code);
+            router.visit(play.url(props.lobby.code));
+            return;
         }
+        await router.reload({ only: ['lobby', 'players'] });
     } catch (error) {
         console.error('Polling error:', error);
     }
@@ -135,10 +156,12 @@ const handleVisibilityChange = () => {
     }
 };
 
+const POLL_INTERVAL_MS = 1000;
+
 onMounted(() => {
     if (props.current_player) {
-        pollLobby(); // Run immediately so multi-tab or slow load still redirects when game started
-        polling.value = window.setInterval(pollLobby, 2000);
+        pollLobby();
+        polling.value = window.setInterval(pollLobby, POLL_INTERVAL_MS);
         document.addEventListener('visibilitychange', handleVisibilityChange);
     }
 });
@@ -199,8 +222,8 @@ const getDifficultyColor = (level: number) => {
                             <p v-if="joinForm.errors.player_name" class="mt-1.5 text-xs text-red-400 sm:text-sm">
                                 {{ joinForm.errors.player_name }}
                             </p>
-                            <p v-if="joinForm.errors.code" class="mt-1.5 text-xs text-red-400 sm:text-sm">
-                                {{ joinForm.errors.code }}
+                            <p v-if="joinFormErrors.code" class="mt-1.5 text-xs text-red-400 sm:text-sm">
+                                {{ joinFormErrors.code }}
                             </p>
                         </div>
                         <button
@@ -459,6 +482,20 @@ const getDifficultyColor = (level: number) => {
                                 {{ getDifficultyLabel(lobby.settings.word_difficulty) }}
                             </span>
                         </div>
+
+                        <div class="glass-light flex items-center justify-between rounded-lg p-2.5 sm:rounded-xl sm:p-3">
+                            <div class="flex items-center gap-2 sm:gap-3">
+                                <div class="flex h-6 w-6 items-center justify-center rounded-md bg-orange-500/20 sm:h-8 sm:w-8 sm:rounded-lg">
+                                    <span class="text-sm font-bold text-orange-400 sm:text-base">{{
+                                        lobby.settings.language === 'en' ? 'EN' : 'RO'
+                                    }}</span>
+                                </div>
+                                <span class="text-xs text-gray-300 sm:text-sm">Language</span>
+                            </div>
+                            <span class="rounded-md bg-gray-800/50 px-2 py-0.5 text-sm font-bold text-white sm:rounded-lg sm:px-3 sm:py-1">{{
+                                lobby.settings.language === 'en' ? 'English' : 'Română'
+                            }}</span>
+                        </div>
                     </div>
 
                     <!-- Edit Settings Form -->
@@ -515,6 +552,16 @@ const getDifficultyColor = (level: number) => {
                                 class="input-field w-full rounded-md px-2 py-2 text-xs text-white sm:rounded-lg sm:px-3 sm:py-2.5"
                             />
                         </div>
+                        <div>
+                            <label class="mb-1 block text-[10px] text-gray-400 sm:mb-1.5 sm:text-xs">Language</label>
+                            <select
+                                v-model="settingsForm.settings.language"
+                                class="input-field w-full rounded-md px-2 py-2 text-xs text-white sm:rounded-lg sm:px-3 sm:py-2.5"
+                            >
+                                <option value="en">English</option>
+                                <option value="ro">Română</option>
+                            </select>
+                        </div>
                         <button
                             type="submit"
                             :disabled="settingsForm.processing"
@@ -548,14 +595,22 @@ const getDifficultyColor = (level: number) => {
                             <p class="mx-auto mb-4 max-w-md text-xs text-gray-400 sm:mb-6 sm:text-base">
                                 All players are here! Click the button below to begin the game.
                             </p>
+                            <p v-if="startGameError" class="mb-3 text-sm text-red-400">{{ startGameError }}</p>
                             <button
                                 @click="startGame"
-                                class="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-3 text-lg font-black text-white shadow-2xl shadow-green-600/30 transition-all hover:scale-105 hover:from-green-500 hover:to-emerald-500 hover:shadow-green-600/50 sm:gap-3 sm:rounded-2xl sm:px-12 sm:py-5 sm:text-xl"
+                                :disabled="startGameLoading"
+                                class="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-3 text-lg font-black text-white shadow-2xl shadow-green-600/30 transition-all hover:scale-105 hover:from-green-500 hover:to-emerald-500 hover:shadow-green-600/50 disabled:cursor-not-allowed disabled:opacity-70 sm:gap-3 sm:rounded-2xl sm:px-12 sm:py-5 sm:text-xl"
                             >
-                                <Sparkles class="h-5 w-5 sm:h-6 sm:w-6" />
-                                <span class="sm:hidden">START</span>
-                                <span class="hidden sm:inline">START GAME</span>
-                                <ChevronRight class="h-5 w-5 transition-transform group-hover:translate-x-1 sm:h-6 sm:w-6" />
+                                <template v-if="startGameLoading">
+                                    <div class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white sm:h-6 sm:w-6"></div>
+                                    <span>Starting...</span>
+                                </template>
+                                <template v-else>
+                                    <Sparkles class="h-5 w-5 sm:h-6 sm:w-6" />
+                                    <span class="sm:hidden">START</span>
+                                    <span class="hidden sm:inline">START GAME</span>
+                                    <ChevronRight class="h-5 w-5 transition-transform group-hover:translate-x-1 sm:h-6 sm:w-6" />
+                                </template>
                             </button>
                         </div>
                     </div>

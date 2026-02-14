@@ -4,7 +4,14 @@
       "Bash(php artisan make:model:*)",
       "Bash(where:*)",
       "Bash(C:Userssushi.configherdbinphp.bat artisan make:model Lobby --migration --no-interaction)",
-      "Bash(dir databasemigrations /b)"
+      "Bash(dir databasemigrations /b)",
+      "mcp__laravel-boost__database-schema",
+      "Bash(php artisan make:migration:*)",
+      "mcp__laravel-boost__tinker",
+      "Bash(php artisan db:wipe:*)",
+      "Bash(vendor/bin/pint:*)",
+      "Bash(php vendor/bin/pint:*)",
+      "Bash(php artisan route:list:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

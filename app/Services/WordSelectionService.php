@@ -12,17 +12,18 @@ class WordSelectionService
     ) {}
 
     /**
-     * Select a crew word for the next game, excluding words used in the last N rounds.
+     * Select a crew word for next game, excluding words used in the last N rounds.
      */
-    public function selectWordForGame(): ?Word
+    public function selectWordForGame(?string $language = 'en'): ?Word
     {
-        return DB::transaction(function () {
+        return DB::transaction(function () use ($language) {
             $round = $this->incrementRound();
             $excludedWordIds = $this->getRecentlyUsedWordIds($round);
 
             $word = Word::crewWords()
                 ->with('impostorWord')
                 ->whereNotNull('impostor_word_id')
+                ->where('language', $language)
                 ->when($excludedWordIds->isNotEmpty(), fn ($query) => $query->whereNotIn('id', $excludedWordIds))
                 ->inRandomOrder()
                 ->first();

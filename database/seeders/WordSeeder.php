@@ -8,267 +8,860 @@ use Illuminate\Database\Seeder;
 class WordSeeder extends Seeder
 {
     /**
-     * Word pairs with ~30% correlation (related but different enough to be tricky)
-     * Each pair: crew_word => impostor_word
+     * Word pairs organized by language and category.
+     * Format: [crew_word, impostor_word, category, language]
      */
     private array $wordPairs = [
-        // Romanian themed - Food & Ingredients
-        'Măr' => 'Pear', // Both fruits
-        'Munte' => 'Deal', // Elevation (Hill)
-        'Mămăligă' => 'Făină', // Corn flour (Polenta)
-        'Sarmale' => 'Varză', // Cabbage rolls ingredient
-        'Branză' => 'Cascaval', // Cheese type
-        'Pâine' => 'Porumb', // Bread (Corn)
-        'Șuncă' => 'Ursu', // Sister (Brother)
-        'Oțet' => 'Bere', // Bear (Honey)
-        'Cămașă' => 'Mămăligă', // Shirt (Lin)
-        'Iarbure' => 'Mătase', // Yarn types
-        'Slănină' => 'Salvat', // Bedding (Storage)
-        'Pâine' => 'Viezure', // Belt (Strap)
-        'Papucă' => 'Papuc', // Father (Mamă)
-        'Gurdie' => 'Nuță', // Sister (Frate)
-        'Mocan' => 'Opincă', // Footwear (Boots)
-        'Ibră' => 'Mătase', // Pants (Shirt)
-        'Furtună' => 'Pălărică', // Hat (Cap)
-        'Măg'. 'Mătase', // Coat (Shirt)
-        'Manșă' => 'Pantofi', // Socks (Shirt)
-        'Ciorbă' => 'Creier', // Sausage variant
-        'Mici' => 'Chiftele', // Sausage variant
-        'Drob' => 'Copan', // Rug (Carpet)
-        'Bec' => 'Măr', // Berry (Fruit)
-        'Salată' => 'Sare', // Soup (Broth)
-        'Borș' => 'Supă', // Garlic (Onion)
-        'Zacuscă' => 'Mujde', // Jam (Preserve)
-        'Oțet' => 'Miere', // Bear (Wax)
-        'Parință' => 'Colț', // Hat (Beret)
-        'Jachet' => 'Beci', // Belt (Strap)
-        'Papuci' => 'Muci', // Aunt (Mom)
-        'Frate' => 'Gurdie', // Sibling (Sister)
-        'Verighe' => 'Barză', // Beer (Wine)
-        'Sofrană' => 'Țuică', // Wine (Brandy)
-        'Țuică' => 'Pruni', // Plum (Pear)
-        'Gutuie' => 'Vișină', // Village (City)
-        'Casă' => 'Casă', // House (Castle)
-        'Curte' => 'Vale', // Valley (Hill)
-        'Pădure' => 'Strugure', // Bridge (Arch)
-        'Fereastră' => 'Perete', // Neighbor (Related)
-        'Prieten' => 'Vecin', // Friend (Enemy)
-        'Coleg' => 'Clasă', // Colleague (School)
-        'Profesor' => 'Învățător', // Teacher (Mentor)
-        'Student' => 'Elev', // Pupil (Student)
-        'Doctor' => 'Medic', // Medic (Nurse)
-        'Pacient' => 'Client', // Customer (Patient)
-        'Portar' => 'Geantă', // Gate (Bear)
-        'Vame' => 'Old', // Seller (Buyer)
-        'Fereastră' => 'Cumpărat', // Neighbor (Related)
-        'Nasă' => 'Plimbă', // Nose (Smell)
-        'Ureche' => 'Auz', // Ear (Hearing)
-        'Gură' => 'Călcăi', // Throat (Neck)
-        'Mușchi' => 'Talpare', // Mustache (Beard)
-        'Sprâceană' => 'Ocean', // Sea (Ocean)
-        'Iarbure' => 'Bec', // Tree (Forest)
-        'Piatră' => 'Clădir', // Rock (Stone)
-        'Pământ' => 'Teren', // Earth (Soil)
-        'Cer' => 'Cer', // Sky (Heaven)
-        'Lumea' => 'Cuvinte', // World (Words)
+        // ENGLISH - FOOD
+        ['Pizza', 'Burger', 'Food', 'en'],
+        ['Spaghetti', 'Lasagna', 'Food', 'en'],
+        ['Chocolate', 'Vanilla', 'Food', 'en'],
+        ['Coffee', 'Tea', 'Food', 'en'],
+        ['Sandwich', 'Wrap', 'Food', 'en'],
+        ['Pancake', 'Waffle', 'Food', 'en'],
+        ['Cheese', 'Butter', 'Food', 'en'],
+        ['Bread', 'Rice', 'Food', 'en'],
+        ['Soup', 'Stew', 'Food', 'en'],
+        ['Salad', 'Vegetables', 'Food', 'en'],
+        ['Steak', 'Roast', 'Food', 'en'],
+        ['Donut', 'Muffin', 'Food', 'en'],
+        ['Croissant', 'Bagel', 'Food', 'en'],
+        ['Sushi', 'Ramen', 'Food', 'en'],
+        ['Taco', 'Burrito', 'Food', 'en'],
+        ['Ice cream', 'Sorbet', 'Food', 'en'],
+        ['Pretzel', 'Popcorn', 'Food', 'en'],
+        ['Hot dog', 'Corndog', 'Food', 'en'],
+        ['Pasta', 'Noodles', 'Food', 'en'],
+        ['Cheesecake', 'Cake', 'Food', 'en'],
 
-        // Balkan themed
-        'Rakija' => 'Șljivovica', // Plum brandy
-        'Burek' => 'Plăcintă', // Pastry dish
-        'Kajmak' => 'Smandžek', // Dairy cream
-        'Ćevapi' => 'Mici', // Sausage dish
-        'Ajvar' => 'Lutenica', // Vegetable spread
-        'Lepinja' => 'Beluša kola', // Corn bread
-        'Pljeskavica' => 'Ćevapi', // Grilled meat
-        'Sarma' => 'Dolma', // Stuffed dish
-        'Musaka' => 'Paprikaš', // Potato dish
-        'Baklava' => 'Tulumba', // Sweet pastry
-        'Lutenica' => 'Pindjur', // Red pepper spread
-        'Pindjur' => 'Ajvar', // Ajvar relish
-        'Gibanica' => 'Grah', // Cheese pastry
-        'Žatobata' => 'Musaka', // Potato casserole
-        'Palačinke' => 'Kuvij', // Little necktie
-        'Bajadera' => 'Punjena', // Wandering
+        // ENGLISH - ANIMALS
+        ['Dog', 'Wolf', 'Animals', 'en'],
+        ['Cat', 'Tiger', 'Animals', 'en'],
+        ['Horse', 'Zebra', 'Animals', 'en'],
+        ['Lion', 'Leopard', 'Animals', 'en'],
+        ['Elephant', 'Rhino', 'Animals', 'en'],
+        ['Dolphin', 'Whale', 'Animals', 'en'],
+        ['Eagle', 'Hawk', 'Animals', 'en'],
+        ['Shark', 'Dolphin', 'Animals', 'en'],
+        ['Bear', 'Panda', 'Animals', 'en'],
+        ['Fox', 'Wolf', 'Animals', 'en'],
+        ['Rabbit', 'Hare', 'Animals', 'en'],
+        ['Deer', 'Moose', 'Animals', 'en'],
+        ['Owl', 'Eagle', 'Animals', 'en'],
+        ['Penguin', 'Seal', 'Animals', 'en'],
+        ['Kangaroo', 'Wallaby', 'Animals', 'en'],
+        ['Monkey', 'Ape', 'Animals', 'en'],
+        ['Snake', 'Lizard', 'Animals', 'en'],
+        ['Frog', 'Toad', 'Animals', 'en'],
+        ['Crab', 'Lobster', 'Animals', 'en'],
+        ['Bee', 'Wasp', 'Animals', 'en'],
+        ['Buterfly', 'Moth', 'Animals', 'en'],
 
-        // European themed
-        'Croissant' => 'Brioche', // Both French pastries
-        'Pizza' => 'Calzone', // Both Italian folded dishes
-        'Tapas' => 'Pinchos', // Both Spanish appetizers
-        'Sauerkraut' => 'Choucroute', // Fermented cabbage dish
-        'Goulash' => 'Paprikáš', // Both paprika dishes
-        'Pierogi' => 'Uszka', // Both dumpling dishes
-        'Haggis' => 'Plăcintă', // Both wrapped dishes
-        'Wiener' => 'Schnitzel', // Both viennese meats
-        'Bagel' => 'Pretzel', // Both breads
-        'Lasagna' => 'Cannelloni', // Both pasta tubes
-        'Macaron' => 'Éclair', // Both French pastries
-        'Gyros' => 'Döner', // Both street meat wraps
-        'Fondue' => 'Raclette', // Melted cheese dish
-        'Choucroute' => 'Sauerkraut', // Cabbage dish
-        'Uszka' => 'Pierogi', // Dumplings
-        'Raclette' => 'Fondue', // Melted cheese
-        'Döner' => 'Gyros', // Street meat
-        'Cannelloni' => 'Lasagna', // Pasta tubes
-        'Pretzel' => 'Bagel', // Bread
-        'Schnitzel' => 'Wiener', // Viennese meat
-        'Éclair' => 'Macaron', // French pastry
-        'Creme' => 'Caramel', // Sweet topping
-        'Brioche' => 'Croissant', // Enriched bread
-        'Calzone' => 'Pizza', // Folded pizza
-        'Pinchos' => 'Tapas', // Spanish appetizer
+        // ENGLISH - NATURE
+        ['Mountain', 'Hill', 'Nature', 'en'],
+        ['River', 'Stream', 'Nature', 'en'],
+        ['Ocean', 'Sea', 'Nature', 'en'],
+        ['Forest', 'Woods', 'Nature', 'en'],
+        ['Desert', 'Dunes', 'Nature', 'en'],
+        ['Rain', 'Shower', 'Nature', 'en'],
+        ['Snow', 'Blizard', 'Nature', 'en'],
+        ['Thunder', 'Lightning', 'Nature', 'en'],
+        ['Cloud', 'Fog', 'Nature', 'en'],
+        ['Sun', 'Moon', 'Nature', 'en'],
+        ['Star', 'Planet', 'Nature', 'en'],
+        ['Volcano', 'Mountain', 'Nature', 'en'],
+        ['Earthquake', 'Tremor', 'Nature', 'en'],
+        ['Tornado', 'Cyclone', 'Nature', 'en'],
+        ['Rainbow', 'Aurora', 'Nature', 'en'],
+        ['Sunset', 'Sunrise', 'Nature', 'en'],
+        ['Beach', 'Coast', 'Nature', 'en'],
+        ['Island', 'Peninsula', 'Nature', 'en'],
+        ['Waterfal', 'Cascade', 'Nature', 'en'],
+        ['Cave', 'Cavern', 'Nature', 'en'],
 
-        // English themed
-        'Tea' => 'Coffee', // Both hot beverages
-        'Biscuit' => 'Scone', // Both baked goods
-        'Soccer' => 'Rugby', // Both ball sports
-        'Cricket' => 'Baseball', // Both bat-ball games
-        'Pub' => 'Inn', // Both drinking places
-        'Rain' => 'Snow', // Both precipitation
-        'Queue' => 'Line', // Same concept
-        'Lift' => 'Hoist', // Raising equipment
-        'Flat' => 'Studio', // Apartment types
-        'Autumn' => 'Fall', // Same season
-        'Crisps' => 'Chips', // Both potato snacks
-        'Sofa' => 'Settee', // Both seating
-        'Boot' => 'Bonnet', // Both car storage
-        'Hood' => 'Trunk', // Both cargo area
-        'Torch' => 'Flashlight', // Both light sources
-        'Jumper' => 'Cardigan', // Both outerwear
-        'Lorry' => 'Truck', // Both trucks
-        'Nappy' => 'Diaper', // Both baby products
-        'Dustbin' => 'Wheelie', // Both waste bins
-        'Trainers' => 'Sneakers', // Both shoes
-        'Postcode' => 'Address', // Both postal codes
-        'Mobile' => 'Cell', // Both phones
-        'Chemist' => 'Pharmacy', // Both drug stores
-        'Garden' => 'Yard', // Both outdoor areas
-        'Hoover' => 'Vacuum', // Both cleaners
-        'Eraser' => 'Correction fluid', // Both correction tools
-        'Biscuit' => 'Cookie', // Sweet treats
-        'Couch' => 'Sofa', // Both seating
-        'Truck' => 'Lorry', // Both vehicles
-        'Diaper' => 'Nappy', // Both baby products
-        'Bonnet' => 'Hood', // Both car parts
-        'Porch' => 'Deck', // Both house parts
-        'Cellar' => 'Attic', // House storage
-        'Basement' => 'Cellar', // Underground
-        'Stairs' => 'Steps', // Both climbing
-        'Chimney' => 'Flue', // Both ventilation
-        'Roof' => 'Shingles', // Both covering
-        'Gutter' => 'Downspout', // Water drainage
-        'Patio' => 'Deck', // Outdoor platform
-        'Driveway' => 'Walkway', // Access path
-        'Pavement' => 'Sidewalk', // Walkway surface
-        'Garage' => 'Carport', // Vehicle storage
-        'Sunglasses' => 'Glasses', // Eyewear
-        'Spectacles' => 'Earrings', // Jewelry
-        'Bracelet' => 'Watch', // Timepiece
-        'Necklace' => 'Ring', // Jewelry
-        'Brooch' => 'Tie', // Jewelry
-        'Ring' => 'Brooch', // Jewelry
-        'Watch' => 'Bracelet', // Timepiece
-        'Anklet' => 'Sock', // Footwear
-        'Stocking' => 'Tights', // Legwear
-        'Scarf' => 'Muffler', // Neckwear
-        'Gloves' => 'Mittens', // Handwear
-        'Jacket' => 'Coat', // Outerwear
-        'Coat' => 'Jacket', // Outerwear
-        'Trousers' => 'Pants', // Bottom wear
-        'Pants' => 'Shorts', // Bottom wear
-        'Shorts' => 'Skirt', // Bottom wear
-        'Dress' => 'Gown', // One piece
-        'Skirt' => 'Dress', // One piece
-        'Suit' => 'Tuxedo', // Formal
-        'Vest' => 'Waistcoat', // Layering
-        'Belt' => 'Suspenders', // Support
-        'Tie' => 'Cravat', // Neckwear
-        'Bowtie' => 'Necktie', // Neckwear
-        'Wallet' => 'Purse', // Money holder
-        'Purse' => 'Pocketbook', // Money holder
-        'Briefcase' => 'Backpack', // Carrier
-        'Backpack' => 'Suitcase', // Luggage
-        'Suitcase' => 'Trunk', // Luggage
-        'Luggage' => 'Baggage', // Luggage
-        'Trunk' => 'Coffin', // Storage
-        'Coffin' => 'Desk', // Furniture
-        'Desk' => 'Counter', // Furniture
-        'Counter' => 'Bar', // Furniture
-        'Table' => 'Shelf', // Furniture
-        'Shelf' => 'Cupboard', // Storage
-        'Cupboard' => 'Wardrobe', // Storage
-        'Wardrobe' => 'Drawer', // Storage
-        'Drawer' => 'Chest', // Storage
-        'Chest' => 'Box', // Storage
-        'Box' => 'Crate', // Storage
-        'Crate' => 'Bin', // Storage
-        'Bin' => 'Basket', // Container
-        'Basket' => 'Hamper', // Container
-        'Hamper' => 'Coffer', // Storage
-        'Coffer' => 'Safe', // Security
-        'Safe' => 'Vault', // Security
+        // ENGLISH - OBJECTS
+        ['Phone', 'Mobile', 'Objects', 'en'],
+        ['Laptop', 'Tablet', 'Objects', 'en'],
+        ['Watch', 'Cloc', 'Objects', 'en'],
+        ['Camera', 'Video camera', 'Objects', 'en'],
+        ['Bicycle', 'Motorcycle', 'Objects', 'en'],
+        ['Car', 'Truc', 'Objects', 'en'],
+        ['Boat', 'Ship', 'Objects', 'en'],
+        ['Plane', 'Jet', 'Objects', 'en'],
+        ['Train', 'Subway', 'Objects', 'en'],
+        ['Bus', 'Tram', 'Objects', 'en'],
+        ['Key', 'Loc', 'Objects', 'en'],
+        ['Walet', 'Purse', 'Objects', 'en'],
+        ['Bacpac', 'Suitcase', 'Objects', 'en'],
+        ['Umbrela', 'Parasol', 'Objects', 'en'],
+        ['Glasses', 'Sunglasses', 'Objects', 'en'],
+        ['Scissors', 'Knife', 'Objects', 'en'],
+        ['Pen', 'Pencil', 'Objects', 'en'],
+        ['Boo', 'Noteboo', 'Objects', 'en'],
+        ['Newspaper', 'Magazine', 'Objects', 'en'],
+        ['Envelope', 'Leter', 'Objects', 'en'],
+
+        // ENGLISH - CLOTHING
+        ['T-shirt', 'Tan top', 'Clothing', 'en'],
+        ['Jacet', 'Coat', 'Clothing', 'en'],
+        ['Jeans', 'Pants', 'Clothing', 'en'],
+        ['Dress', 'Sirt', 'Clothing', 'en'],
+        ['Shoes', 'Sneacers', 'Clothing', 'en'],
+        ['Boots', 'Sandals', 'Clothing', 'en'],
+        ['Hat', 'Cap', 'Clothing', 'en'],
+        ['Gloves', 'Mitens', 'Clothing', 'en'],
+        ['Scarf', 'Shawl', 'Clothing', 'en'],
+        ['Socs', 'Stocings', 'Clothing', 'en'],
+        ['Sweater', 'Cardigan', 'Clothing', 'en'],
+        ['Suit', 'Tuxedo', 'Clothing', 'en'],
+        ['Belt', 'Suspenders', 'Clothing', 'en'],
+        ['Tie', 'Bowtie', 'Clothing', 'en'],
+        ['Ring', 'Braceet', 'Clothing', 'en'],
+        ['Neclace', 'Pendant', 'Clothing', 'en'],
+        ['Earings', 'Studs', 'Clothing', 'en'],
+        ['Watch', 'Wristwatch', 'Clothing', 'en'],
+        ['Sunglasses', 'Glasses', 'Clothing', 'en'],
+        ['Pajamas', 'Nightgown', 'Clothing', 'en'],
+
+        // ENGLISH - SPORTS
+        ['Socer', 'Footbal', 'Sports', 'en'],
+        ['Basetbal', 'Voleybal', 'Sports', 'en'],
+        ['Tennis', 'Badminton', 'Sports', 'en'],
+        ['Basebal', 'Sotbal', 'Sports', 'en'],
+        ['Hocey', 'Ice hocey', 'Sports', 'en'],
+        ['Golf', 'Mini golf', 'Sports', 'en'],
+        ['Boxing', 'Wrestling', 'Sports', 'en'],
+        ['Swimming', 'Diving', 'Sports', 'en'],
+        ['Siiing', 'Snowboarding', 'Sports', 'en'],
+        ['Suring', 'Bodyboarding', 'Sports', 'en'],
+        ['Ches', 'Checers', 'Sports', 'en'],
+        ['Poer', 'Blacjac', 'Sports', 'en'],
+        ['Bowling', 'Bowling', 'Sports', 'en'],
+        ['Darts', 'Archery', 'Sports', 'en'],
+        ['Pool', 'Biliards', 'Sports', 'en'],
+        ['Runing', 'Sprinting', 'Sports', 'en'],
+
+        // ENGLISH - PROFESSIONS
+        ['Doctor', 'Nurse', 'Professions', 'en'],
+        ['Teacher', 'Professor', 'Professions', 'en'],
+        ['Poice', 'Detective', 'Professions', 'en'],
+        ['Firefighter', 'Paramedic', 'Professions', 'en'],
+        ['Chef', 'Coo', 'Professions', 'en'],
+        ['Pilot', 'Captain', 'Professions', 'en'],
+        ['Artist', 'Painer', 'Professions', 'en'],
+        ['Musician', 'Singer', 'Professions', 'en'],
+        ['Actor', 'Performer', 'Professions', 'en'],
+        ['Writer', 'Author', 'Professions', 'en'],
+        ['Lawyer', 'Attorney', 'Professions', 'en'],
+        ['Engineer', 'Architect', 'Professions', 'en'],
+        ['Scientist', 'Researcher', 'Professions', 'en'],
+        ['Programmer', 'Developer', 'Professions', 'en'],
+        ['Farmer', 'Gardener', 'Professions', 'en'],
+        ['Dentist', 'Orthodontist', 'Professions', 'en'],
+        ['Vet', 'Zoologist', 'Professions', 'en'],
+        ['Pharmacist', 'Chemist', 'Professions', 'en'],
+        ['Psychiatrist', 'Psychologist', 'Professions', 'en'],
+        ['Judge', 'Magistrate', 'Professions', 'en'],
+
+        // ENGLISH - PLACES
+        ['House', 'Home', 'Places', 'en'],
+        ['Apartment', 'Flat', 'Places', 'en'],
+        ['Schol', 'Colege', 'Places', 'en'],
+        ['Hospial', 'Clinic', 'Places', 'en'],
+        ['Restauran', 'Cafe', 'Places', 'en'],
+        ['Hotel', 'Motel', 'Places', 'en'],
+        ['Library', 'Boosore', 'Places', 'en'],
+        ['Museum', 'Galer', 'Places', 'en'],
+        ['Ther', 'Cinema', 'Places', 'en'],
+        ['Stadium', 'Arena', 'Places', 'en'],
+        ['Airpor', 'Terminal', 'Places', 'en'],
+        ['Sation', 'Terminal', 'Places', 'en'],
+        ['Par', 'Garden', 'Places', 'en'],
+        ['Zo', 'Aquarium', 'Places', 'en'],
+        ['Church', 'Temple', 'Places', 'en'],
+        ['Ban', 'Vaul', 'Places', 'en'],
+        ['Pos', 'Mailbo', 'Places', 'en'],
+        ['Pharmacy', 'Drugsore', 'Places', 'en'],
+        ['Supermar', 'Grocery sore', 'Places', 'en'],
+        ['Gas sation', 'Fuel sation', 'Places', 'en'],
+
+        // ENGLISH - BODY
+        ['Head', 'Face', 'Body', 'en'],
+        ['Eye', 'Ear', 'Body', 'en'],
+        ['Nose', 'Mouh', 'Body', 'en'],
+        ['Hand', 'Arm', 'Body', 'en'],
+        ['Foo', 'Leg', 'Body', 'en'],
+        ['Hear', 'Lungs', 'Body', 'en'],
+        ['Brain', 'Mind', 'Body', 'en'],
+        ['Somach', 'Bely', 'Body', 'en'],
+        ['Bac', 'Spine', 'Body', 'en'],
+        ['Shouler', 'Elbow', 'Body', 'en'],
+        ['Knee', 'Anle', 'Body', 'en'],
+        ['Finger', 'Thumb', 'Body', 'en'],
+        ['Hair', 'Beard', 'Body', 'en'],
+        ['Sin', 'Flesh', 'Body', 'en'],
+        ['Bone', 'Seleton', 'Body', 'en'],
+        ['Muscle', 'Tendon', 'Body', 'en'],
+        ['Blood', 'Vein', 'Body', 'en'],
+        ['Tongue', 'Throa', 'Body', 'en'],
+        ['Tooh', 'Molar', 'Body', 'en'],
+        ['Nec', 'Chin', 'Body', 'en'],
+
+        // ENGLISH - COLORS
+        ['Red', 'Crimson', 'Colors', 'en'],
+        ['Blue', 'Azure', 'Colors', 'en'],
+        ['Green', 'Emerald', 'Colors', 'en'],
+        ['Yelow', 'Gold', 'Colors', 'en'],
+        ['Orange', 'Tangerine', 'Colors', 'en'],
+        ['Purple', 'Viole', 'Colors', 'en'],
+        ['Pin', 'Magena', 'Colors', 'en'],
+        ['Brown', 'Tan', 'Colors', 'en'],
+        ['Blac', 'Ebony', 'Colors', 'en'],
+        ['Whie', 'Ivory', 'Colors', 'en'],
+        ['Gray', 'Silver', 'Colors', 'en'],
+        ['Teal', 'Turquois', 'Colors', 'en'],
+        ['Lavender', 'Lilac', 'Colors', 'en'],
+        ['Indigo', 'Navy', 'Colors', 'en'],
+        ['Coral', 'Peach', 'Colors', 'en'],
+
+        // ROMANIAN - MÂNCARE
+        ['Măr', 'Păr', 'Fructe', 'ro'],
+        ['Pâine', 'Pâine', 'Mâncare', 'ro'],
+        ['Lapte', 'Smântână', 'Mâncare', 'ro'],
+        ['Ou', 'Gălbenuș', 'Mâncare', 'ro'],
+        ['Carne', 'Vită', 'Mâncare', 'ro'],
+        ['Pește', 'Crap', 'Mâncare', 'ro'],
+        ['Salam', 'Cârnați', 'Mâncare', 'ro'],
+        ['Branză', 'Telemea', 'Mâncare', 'ro'],
+        ['Mămăligă', 'Porrige', 'Mâncare', 'ro'],
+        ['Sarmale', 'Varză', 'Mâncare', 'ro'],
+        ['Ciorbă', 'Supă', 'Mâncare', 'ro'],
+        ['Mici', 'Chiftele', 'Mâncare', 'ro'],
+        ['Friptură', 'Grătar', 'Mâncare', 'ro'],
+        ['Tocăniță', 'Pilaf', 'Mâncare', 'ro'],
+        ['Plăcintă', 'Strudel', 'Mâncare', 'ro'],
+        ['Clătită', 'Pandișapă', 'Mâncare', 'ro'],
+        ['Cozonac', 'Pașcă', 'Mâncare', 'ro'],
+        ['Dulceață', 'Gem', 'Mâncare', 'ro'],
+        ['Miere', 'Zahăr', 'Mâncare', 'ro'],
+        ['Vin', 'Țuică', 'Băuturi', 'ro'],
+        ['Bere', 'Cider', 'Băuturi', 'ro'],
+        ['Cafea', 'Espresso', 'Băuturi', 'ro'],
+        ['Ceai', 'Infuzie', 'Băuturi', 'ro'],
+        ['Suc', 'Nectar', 'Băuturi', 'ro'],
+        ['Apă', 'Fântână', 'Băuturi', 'ro'],
+        ['Limonadă', 'Sodă', 'Băuturi', 'ro'],
+        ['Șampanie', 'Spumant', 'Băuturi', 'ro'],
+        ['Palaminc', 'Chiftele', 'Mâncare', 'ro'],
+        ['Supă', 'Ciorbă', 'Mâncare', 'ro'],
+        ['Tocăniță', 'Gulaș', 'Mâncare', 'ro'],
+        ['Pilaf', 'Orez', 'Mâncare', 'ro'],
+        ['Sote', 'Tocăniță', 'Mâncare', 'ro'],
+
+        // ROMANIAN - ANIMALE
+        ['Câine', 'Lup', 'Animale', 'ro'],
+        ['Pisică', 'Pisică sălbatică', 'Animale', 'ro'],
+        ['Cal', 'Mânz', 'Animale', 'ro'],
+        ['Vacă', 'Bou', 'Animale', 'ro'],
+        ['Porc', 'Scroafă', 'Animale', 'ro'],
+        ['Oaie', 'Berbec', 'Animale', 'ro'],
+        ['Capră', 'Ied', 'Animale', 'ro'],
+        ['Măgar', 'Catâr', 'Animale', 'ro'],
+        ['Iapă', 'Cornac', 'Animale', 'ro'],
+        ['Leu', 'Leoaică', 'Animale', 'ro'],
+        ['Urs', 'Urs polar', 'Animale', 'ro'],
+        ['Vulpă', 'Șacal', 'Animale', 'ro'],
+        ['Iepure', 'Iepure de câmp', 'Animale', 'ro'],
+        ['Veveriță', 'Șobolan', 'Animale', 'ro'],
+        ['Arici', 'Arici', 'Animale', 'ro'],
+        ['Dihor', 'Dihor de mare', 'Animale', 'ro'],
+        ['Bursuc', 'Vizon', 'Animale', 'ro'],
+        ['Nutrie', 'Castor', 'Animale', 'ro'],
+        ['Râs', 'Lutră', 'Animale', 'ro'],
+        ['Delfin', 'Focă', 'Animale', 'ro'],
+        ['Balenă', 'Rechin', 'Animale', 'ro'],
+        ['Vultur', 'Șoim', 'Animale', 'ro'],
+        ['Bufniță', 'Huhurez', 'Animale', 'ro'],
+        ['Cocoș', 'Găină', 'Animale', 'ro'],
+        ['Curcan', 'Cocoș', 'Animale', 'ro'],
+        ['Rață', 'Lebădă', 'Animale', 'ro'],
+        ['Gâscă', 'Lebădă', 'Animale', 'ro'],
+        ['Porumbel', 'Porumb', 'Animale', 'ro'],
+        ['Barză', 'Ciconie', 'Animale', 'ro'],
+        ['Cocostârc', 'Pelican', 'Animale', 'ro'],
+        ['Rândunică', 'Ciocârlie', 'Animale', 'ro'],
+        ['Privighetoare', 'Buhai', 'Animale', 'ro'],
+        ['Corb', 'Stârc', 'Animale', 'ro'],
+        ['Păun', 'Potârnichi', 'Animale', 'ro'],
+        ['Șarpe', 'Năpârcă', 'Animale', 'ro'],
+        ['Iguană', 'Șopârlă', 'Animale', 'ro'],
+        ['Broască', 'Broască țestoasă', 'Animale', 'ro'],
+        ['Țestoasă', 'Broască', 'Animale', 'ro'],
+        ['Libelulă', 'Fluture', 'Animale', 'ro'],
+        ['Furnică', 'Purece', 'Animale', 'ro'],
+        ['Albină', 'Viespe', 'Animale', 'ro'],
+        ['Greier', 'Lăcustă', 'Animale', 'ro'],
+        ['Fluture', 'Molie', 'Animale', 'ro'],
+        ['Călugăr', 'Gândac', 'Animale', 'ro'],
+        ['Scarabeu', 'Gândac', 'Animale', 'ro'],
+
+        // ROMANIAN - NATURĂ
+        ['Munte', 'Vârf', 'Natură', 'ro'],
+        ['Deal', 'Deal', 'Natură', 'ro'],
+        ['Vale', 'Câmpie', 'Natură', 'ro'],
+        ['Pădure', 'Copac', 'Natură', 'ro'],
+        ['Râu', 'Pârâu', 'Natură', 'ro'],
+        ['Lac', 'Bălțac', 'Natură', 'ro'],
+        ['Mare', 'Ocean', 'Natură', 'ro'],
+        ['Izvor', 'Fântână', 'Natură', 'ro'],
+        ['Cascadă', 'Cădere de apă', 'Natură', 'ro'],
+        ['Peșteră', 'Grota', 'Natură', 'ro'],
+        ['Câmpie', 'Câmp', 'Natură', 'ro'],
+        ['Stepă', 'Stepă', 'Natură', 'ro'],
+        ['Deșert', 'Nisipuri', 'Natură', 'ro'],
+        ['Dunăre', 'Râu', 'Natură', 'ro'],
+        ['Delta', 'Gura de vărsare', 'Natură', 'ro'],
+        ['Insulă', 'Arhipelag', 'Natură', 'ro'],
+        ['Peninsulă', 'Istm', 'Natură', 'ro'],
+        ['Plajă', 'Litoral', 'Natură', 'ro'],
+        ['Țărm', 'Mal', 'Natură', 'ro'],
+        ['Golf', 'Liman', 'Natură', 'ro'],
+        ['Fiord', 'Golf', 'Natură', 'ro'],
+        ['Recif', 'Atol', 'Natură', 'ro'],
+        ['Vulcan', 'Ecuție', 'Natură', 'ro'],
+        ['Erupție', 'Cutremur', 'Natură', 'ro'],
+        ['Tsunami', 'Val mare', 'Natură', 'ro'],
+        ['Uragan', 'Ciclon', 'Natură', 'ro'],
+        ['Tornadă', 'Vijelie', 'Natură', 'ro'],
+        ['Furtună', 'Viscol', 'Natură', 'ro'],
+        ['Ploaie', 'Averse', 'Natură', 'ro'],
+        ['Ninsore', 'Viscol', 'Natură', 'ro'],
+        ['Grindină', 'Ploaie cu gheață', 'Natură', 'ro'],
+        ['Cenușă vulcanică', 'Lavă', 'Natură', 'ro'],
+        ['Ceață', 'Ceață', 'Natură', 'ro'],
+        ['Curcubeu', 'Auroră boreală', 'Natură', 'ro'],
+        ['Soare', 'Lună', 'Natură', 'ro'],
+        ['Lună', 'Planetă', 'Natură', 'ro'],
+        ['Steaă', 'Constelație', 'Natură', 'ro'],
+        ['Planetă', 'Cometă', 'Natură', 'ro'],
+        ['Piatră', 'Stâncă', 'Natură', 'ro'],
+        ['Pământ', 'Teren', 'Natură', 'ro'],
+        ['Rocă', 'Fracțiune', 'Natură', 'ro'],
+        ['Argilă', 'Lut', 'Natură', 'ro'],
+        ['Nisip', 'Praf', 'Natură', 'ro'],
+        ['Petriler', 'Hârb', 'Natură', 'ro'],
+
+        // ROMANIAN - OBIECTE
+        ['Telefon', 'Mobil', 'Obiecte', 'ro'],
+        ['Laptop', 'Calculator', 'Obiecte', 'ro'],
+        ['Televizor', 'Ecran', 'Obiecte', 'ro'],
+        ['Radio', 'Post de radio', 'Obiecte', 'ro'],
+        ['Cameră', 'Aparat foto', 'Obiecte', 'ro'],
+        ['Oglină', 'Ramă', 'Obiecte', 'ro'],
+        ['Ceas', 'Orologiu', 'Obiecte', 'ro'],
+        ['Clepsidră', 'Ceas', 'Obiecte', 'ro'],
+        ['Balansoar', 'Leagăn', 'Obiecte', 'ro'],
+        ['Pat', 'Canapea', 'Obiecte', 'ro'],
+        ['Fotoliu', 'Scaun', 'Obiecte', 'ro'],
+        ['Masă', 'Birou', 'Obiecte', 'ro'],
+        ['Scaun', 'Taburet', 'Obiecte', 'ro'],
+        ['Dulap', 'Șifonier', 'Obiecte', 'ro'],
+        ['Comodă', 'Noptieră', 'Obiecte', 'ro'],
+        ['Bibliotecă', 'Raftă', 'Obiecte', 'ro'],
+        ['Cufăr', 'Valiză', 'Obiecte', 'ro'],
+        ['Ramă', 'Tablou', 'Obiecte', 'ro'],
+        ['Tablou', 'Pictură', 'Obiecte', 'ro'],
+        ['Sculptură', 'Statuie', 'Obiecte', 'ro'],
+        ['Vază', 'Vază de flori', 'Obiecte', 'ro'],
+        ['Lampă', 'Candelabru', 'Obiecte', 'ro'],
+        ['Sfeșnic', 'Candelabru', 'Obiecte', 'ro'],
+        ['Veștej', 'Luminătoare', 'Obiecte', 'ro'],
+        ['Bec', 'Lămpă', 'Obiecte', 'ro'],
+        ['Baterie', 'Acumulator', 'Obiecte', 'ro'],
+        ['Priză', 'Ștecher', 'Obiecte', 'ro'],
+        ['Încărcător', 'Adaptor', 'Obiecte', 'ro'],
+        ['Cablou', 'Sârmă', 'Obiecte', 'ro'],
+        ['Teaset', 'Farfurie', 'Obiecte', 'ro'],
+        ['Farfurie', 'Farfurie', 'Obiecte', 'ro'],
+        ['Pahar', 'Cana', 'Obiecte', 'ro'],
+        ['Cana', 'Pahar', 'Obiecte', 'ro'],
+        ['Furculiță', 'Cuțit', 'Obiecte', 'ro'],
+        ['Cuțit', 'Cuțit', 'Obiecte', 'ro'],
+        ['Lingură', 'Lingură', 'Obiecte', 'ro'],
+        ['Servietă', 'Portofoliu', 'Obiecte', 'ro'],
+
+        // ROMANIAN - HĂINE
+        ['Cămașă', 'Tricou', 'Haine', 'ro'],
+        ['Pantalon', 'Blugi', 'Haine', 'ro'],
+        ['Rochie', 'Fustă', 'Haine', 'ro'],
+        ['Sacou', 'Palton', 'Haine', 'ro'],
+        ['Geacă', 'Palton', 'Haine', 'ro'],
+        ['Cojoc', 'Pelerină', 'Haine', 'ro'],
+        ['Șal', 'Eșarfă', 'Haine', 'ro'],
+        ['Eșarfă', 'Batică', 'Haine', 'ro'],
+        ['Pălărie', 'Șapcă', 'Haine', 'ro'],
+        ['Șapcă', 'Berechet', 'Haine', 'ro'],
+        ['Berechet', 'Cască', 'Haine', 'ro'],
+        ['Cască', 'Beronica', 'Haine', 'ro'],
+        ['Beronica', 'Pălărie', 'Haine', 'ro'],
+        ['Mănușă', 'Mătase', 'Haine', 'ro'],
+        ['Mătase', 'Mănuși', 'Haine', 'ro'],
+        ['Mănuși', 'Mănușă', 'Haine', 'ro'],
+        ['Șosetă', 'Ciorap', 'Haine', 'ro'],
+        ['Ciorap', 'Dresă', 'Haine', 'ro'],
+        ['Dresă', 'Ciorapi', 'Haine', 'ro'],
+        ['Papuc', 'Bocanci', 'Haine', 'ro'],
+        ['Bocanci', 'Ghete', 'Haine', 'ro'],
+        ['Gheată', 'Cizme', 'Haine', 'ro'],
+        ['Cizme', 'Opincă', 'Haine', 'ro'],
+        ['Sandale', 'Șlapi', 'Haine', 'ro'],
+        ['Costum', 'Smoching', 'Haine', 'ro'],
+        ['Cravată', 'Papion', 'Haine', 'ro'],
+        ['Papion', 'Cravată', 'Haine', 'ro'],
+        ['Brățară', 'Colier', 'Haine', 'ro'],
+        ['Colier', 'Lănțișor', 'Haine', 'ro'],
+        ['Inel', 'Verighetă', 'Haine', 'ro'],
+        ['Verighetă', 'Inel', 'Haine', 'ro'],
+        ['Cercei', 'Pandativ', 'Haine', 'ro'],
+        ['Pandativ', 'Cercei', 'Haine', 'ro'],
+        ['Ceas', 'Brățară', 'Haine', 'ro'],
+        ['Brățară', 'Ceas', 'Haine', 'ro'],
+        [' curea', 'Centură', 'Haine', 'ro'],
+        ['Centură', ' curea', 'Haine', 'ro'],
+        ['Pijama', 'Cămașă de noapte', 'Haine', 'ro'],
+        ['Robă de casă', 'Halat', 'Haine', 'ro'],
+        ['Halat', 'Robă de casă', 'Haine', 'ro'],
+        ['Malet', 'Borsetă', 'Haine', 'ro'],
+        ['Borsetă', 'Geantă', 'Haine', 'ro'],
+        ['Geantă', 'Poșetă', 'Haine', 'ro'],
+        ['Poșetă', 'Rucsac', 'Haine', 'ro'],
+
+        // ROMANIAN - CORP UMAN
+        ['Cap', 'Față', 'Corp', 'ro'],
+        ['Față', 'Chip', 'Corp', 'ro'],
+        ['Ochi', 'Ureche', 'Corp', 'ro'],
+        ['Ureche', 'Ureche', 'Corp', 'ro'],
+        ['Nas', 'Gură', 'Corp', 'ro'],
+        ['Gură', 'Buze', 'Corp', 'ro'],
+        ['Buze', 'Buză', 'Corp', 'ro'],
+        ['Limba', 'Limbă', 'Corp', 'ro'],
+        ['Dinți', 'Dinte', 'Corp', 'ro'],
+        ['Gât', 'Gât', 'Corp', 'ro'],
+        ['Bărbie', 'Bărbie', 'Corp', 'ro'],
+        ['Obraz', 'Obraz', 'Corp', 'ro'],
+        ['Păr', 'Păr', 'Corp', 'ro'],
+        ['Barbă', 'Barbă', 'Corp', 'ro'],
+        ['Mustăți', 'Mustăți', 'Corp', 'ro'],
+        ['Sprâncene', 'Sprânceană', 'Corp', 'ro'],
+        ['Gene', 'Gene', 'Corp', 'ro'],
+        ['Mână', 'Mână', 'Corp', 'ro'],
+        ['Deget', 'Degete', 'Corp', 'ro'],
+        ['Pumn', 'Pumn', 'Corp', 'ro'],
+        ['Încheietură', 'Încheieturi', 'Corp', 'ro'],
+        ['Cot', 'Cot', 'Corp', 'ro'],
+        ['Umăr', 'Umăr', 'Corp', 'ro'],
+        ['Axilă', 'Axile', 'Corp', 'ro'],
+        ['Piept', 'Piept', 'Corp', 'ro'],
+        ['Spate', 'Spațe', 'Corp', 'ro'],
+        ['Colecio', 'Colecioane', 'Corp', 'ro'],
+        ['Șale', 'Șale', 'Corp', 'ro'],
+        ['Buric', 'Buric', 'Corp', 'ro'],
+        ['Burtă', 'Burtă', 'Corp', 'ro'],
+        ['Abdomen', 'Burtă', 'Corp', 'ro'],
+        ['Picior', 'Picioare', 'Corp', 'ro'],
+        ['Gambă', 'Gambe', 'Corp', 'ro'],
+        ['Glezne', 'Gleznă', 'Corp', 'ro'],
+        ['Călcai', 'Călcâi', 'Corp', 'ro'],
+        ['Tălpi', 'Tălpile', 'Corp', 'ro'],
+        ['Lăbuțe', 'Lăbuță', 'Corp', 'ro'],
+        ['Inimă', 'Inimă', 'Corp', 'ro'],
+        ['Plămâni', 'Plămân', 'Corp', 'ro'],
+        ['Ficat', 'Ficat', 'Corp', 'ro'],
+        ['Rinichi', 'Rinichi', 'Corp', 'ro'],
+        ['Stomac', 'Stomac', 'Corp', 'ro'],
+        ['Intestine', 'Intestin', 'Corp', 'ro'],
+        ['Creier', 'Creier', 'Corp', 'ro'],
+        ['Măduvă', 'Măduva', 'Corp', 'ro'],
+        ['Os', 'Oase', 'Corp', 'ro'],
+        ['Sânge', 'Sânge', 'Corp', 'ro'],
+        ['Vase de sânge', 'Vene', 'Corp', 'ro'],
+        ['Piele', 'Piele', 'Corp', 'ro'],
+        ['Unghie', 'Unghii', 'Corp', 'ro'],
+        ['Mușchi', 'Mușchi', 'Corp', 'ro'],
+        ['Tendoane', 'Tendoan', 'Corp', 'ro'],
+
+        // ROMANIAN - CULORI
+        ['Roșu', 'Carmezin', 'Culori', 'ro'],
+        ['Albastru', 'Azuriu', 'Culori', 'ro'],
+        ['Galben', 'Auriu', 'Culori', 'ro'],
+        ['Verde', 'Smărăldiu', 'Culori', 'ro'],
+        ['Portocaliu', 'Roz', 'Culori', 'ro'],
+        ['Violet', 'Mov', 'Culori', 'ro'],
+        ['Roz', 'Roz deschis', 'Culori', 'ro'],
+        ['Maro', 'Castaniu', 'Culori', 'ro'],
+        ['Negru', 'Negrul', 'Culori', 'ro'],
+        ['Alb', 'Albul', 'Culori', 'ro'],
+        ['Gri', 'Gri', 'Culori', 'ro'],
+        ['Argintiu', 'Argintiu', 'Culori', 'ro'],
+        ['Platinat', 'Platinat', 'Culori', 'ro'],
+        ['Bej', 'Crem', 'Culori', 'ro'],
+        ['Crem', 'Bej', 'Culori', 'ro'],
+        ['Oliva', 'Verde măslin', 'Culori', 'ro'],
+        ['Verde măslin', 'Oliva', 'Culori', 'ro'],
+        ['Turcoaz', 'Turcoaz', 'Culori', 'ro'],
+        ['Indigo', 'Indigo', 'Culori', 'ro'],
+        ['Violet deschis', 'Lavandă', 'Culori', 'ro'],
+        ['Lavandă', 'Liliac', 'Culori', 'ro'],
+        ['Liliac', 'Violet deschis', 'Culori', 'ro'],
+        ['Fuchsia', 'Fuchsia', 'Culori', 'ro'],
+        ['Magenta', 'Magenta', 'Culori', 'ro'],
+        ['Corai', 'Corai', 'Culori', 'ro'],
+        ['Amarant', 'Amarant', 'Culori', 'ro'],
+        ['Bordeux', 'Bordeux', 'Culori', 'ro'],
+        ['Ocher', 'Ocher', 'Culori', 'ro'],
+        ['Terracota', 'Terracota', 'Culori', 'ro'],
+
+        // ROMANIAN - SPORTURI
+        ['Fotbal', 'Fotbal american', 'Sport', 'ro'],
+        ['Baschet', 'Baschet', 'Sport', 'ro'],
+        ['Volei', 'Volei', 'Sport', 'ro'],
+        ['Handbal', 'Handbal', 'Sport', 'ro'],
+        ['Rugby', 'Rugby', 'Sport', 'ro'],
+        ['Tenis', 'Tenis de câmp', 'Sport', 'ro'],
+        ['Tenis de masă', 'Ping-pong', 'Sport', 'ro'],
+        ['Ping-pong', 'Tenis de masă', 'Sport', 'ro'],
+        ['Înot', 'Înot competiiiv', 'Sport', 'ro'],
+        ['Alergare', 'Alergare de fond', 'Sport', 'ro'],
+        ['Maraton', 'Semimaraton', 'Sport', 'ro'],
+        ['Sprint', 'Sprint', 'Sport', 'ro'],
+        ['Ciclism', 'Ciclism pe șosea', 'Sport', 'ro'],
+        ['Mountain bicing', 'BMX', 'Sport', 'ro'],
+        ['Bicicletă', 'Bicicletă', 'Sport', 'ro'],
+        ['Schi', 'Schi alpin', 'Sport', 'ro'],
+        ['Schi fond', 'Schi de fond', 'Sport', 'ro'],
+        ['Snowboard', 'Snowboard', 'Sport', 'ro'],
+        ['Patinaj artistic', 'Patinaj viteză', 'Sport', 'ro'],
+        ['Hochei pe gheață', 'Hochei', 'Sport', 'ro'],
+        ['Box', 'Box profesionist', 'Sport', 'ro'],
+        ['Lupte', 'Lupte greco-romană', 'Sport', 'ro'],
+        ['Judo', 'Judo', 'Sport', 'ro'],
+        ['Karate', 'Karate', 'Sport', 'ro'],
+        ['Taewondo', 'Taewondo', 'Sport', 'ro'],
+        ['Aido', 'Aido', 'Sport', 'ro'],
+        ['Scrimă', 'Sabic', 'Sport', 'ro'],
+        ['Sabic', 'Scrimă', 'Sport', 'ro'],
+        ['Gimnastică', 'Gimnastică artistică', 'Sport', 'ro'],
+        ['Aerobică', 'Aerobic', 'Sport', 'ro'],
+        ['Aletism', 'Aletism', 'Sport', 'ro'],
+        ['Aruncări', 'Aruncări', 'Sport', 'ro'],
+        ['Sărituri', 'Sărituri înălțime', 'Sport', 'ro'],
+        ['Haltere', 'Haltere', 'Sport', 'ro'],
+        ['Fitness', 'Fitness', 'Sport', 'ro'],
+        ['Bodybuilding', 'Culturism', 'Sport', 'ro'],
+        ['Culturism', 'Bodybuilding', 'Sport', 'ro'],
+        ['Yoga', 'Yoga', 'Sport', 'ro'],
+        ['Pilates', 'Pilates', 'Sport', 'ro'],
+        ['Șah', 'Șah', 'Sport', 'ro'],
+        ['Dame', 'Dame', 'Sport', 'ro'],
+        ['Cărți', 'Cărți', 'Sport', 'ro'],
+        ['Remi', 'Canotaj', 'Sport', 'ro'],
+        ['Canotaj', 'Remi', 'Sport', 'ro'],
+        ['Popice', 'Popice', 'Sport', 'ro'],
+        ['Bowling', 'Bowling', 'Sport', 'ro'],
+        ['Biliard', 'Biliard', 'Sport', 'ro'],
+        ['Biliard', 'Snucer', 'Sport', 'ro'],
+        ['Snucer', 'Biliard', 'Sport', 'ro'],
+        ['Darts', 'Darts', 'Sport', 'ro'],
+        ['Săgeată', 'Tir cu arcula', 'Sport', 'ro'],
+        ['Tir cu arcula', 'Săgeată', 'Sport', 'ro'],
+        ['Pescuit sportiv', 'Pescuit', 'Sport', 'ro'],
+        ['Vânat', 'Vânătoare', 'Sport', 'ro'],
+        ['Vânătoare', 'Vânat', 'Sport', 'ro'],
+        ['Tir sportiv', 'Tir la țintă', 'Sport', 'ro'],
+        ['Tragere la țintă', 'Tir sportiv', 'Sport', 'ro'],
+        ['Paintbal', 'Paintbal', 'Sport', 'ro'],
+        ['Airsft', 'Airsft', 'Sport', 'ro'],
+        ['Parașutism', 'Parașutism', 'Sport', 'ro'],
+        ['Zbor cu parapanta', 'Planeur', 'Sport', 'ro'],
+        ['Planor', 'Zbor cu parapanta', 'Sport', 'ro'],
+        ['Alpinism', 'Alpinism', 'Sport', 'ro'],
+        ['Escaladă', 'Escaladă sportivă', 'Sport', 'ro'],
+        ['Escaladă sportivă', 'Alpinism', 'Sport', 'ro'],
+        ['Caicac', 'Caicac', 'Sport', 'ro'],
+        ['Canotcă', 'Caiac-canotcă', 'Sport', 'ro'],
+        ['Caiac-canotcă', 'Canotcă', 'Sport', 'ro'],
+        ['Navigare', 'Yachting', 'Sport', 'ro'],
+        ['Yachting', 'Navigare', 'Sport', 'ro'],
+        ['Veling', 'Veling', 'Sport', 'ro'],
+        ['Surfing', 'Surf', 'Sport', 'ro'],
+        ['Paddleboarding', 'Paddleboarding', 'Sport', 'ro'],
+        ['Scufundare', 'Scufundare liberă', 'Sport', 'ro'],
+        ['Scufundare liberă', 'Scufundare', 'Sport', 'ro'],
+        ['Sanie', 'Sanie', 'Sport', 'ro'],
+        ['Bob', 'Bob', 'Sport', 'ro'],
+        ['Skeleton', 'Skeleton', 'Sport', 'ro'],
+        ['Snowmobiling', 'Skijet', 'Sport', 'ro'],
+
+        // ROMANIAN - PROFEȘII
+        ['Doctor', 'Medic', 'Profesii', 'ro'],
+        ['Medic', 'Asistent medical', 'Profesii', 'ro'],
+        ['Asistent medical', 'Doctor', 'Profesii', 'ro'],
+        ['Învățător', 'Profesor', 'Profesii', 'ro'],
+        ['Profesor', 'Lector universitar', 'Profesii', 'ro'],
+        ['Lector universitar', 'Conferențiar universitar', 'Profesii', 'ro'],
+        ['Conferențiar universitar', 'Învățător', 'Profesii', 'ro'],
+        ['Polițist', 'Polițist', 'Profesii', 'ro'],
+        ['Detectiv', 'Detectiv particular', 'Profesii', 'ro'],
+        ['Detectiv particular', 'Polițist', 'Profesii', 'ro'],
+        ['Pompier', 'Pompier profesionist', 'Profesii', 'ro'],
+        ['Paramedic', 'Pompier', 'Profesii', 'ro'],
+        ['Judecător', 'Judecător', 'Profesii', 'ro'],
+        ['Procuror', 'Procuror', 'Profesii', 'ro'],
+        ['Avocat', 'Avocat', 'Profesii', 'ro'],
+        ['Bucătar', 'Bucătar șef', 'Profesii', 'ro'],
+        ['Desert', 'Desert', 'Profesii', 'ro'],
+        ['Cofetar', 'Cofetar', 'Profesii', 'ro'],
+        ['Ospătar', 'Ospătar', 'Profesii', 'ro'],
+        ['Electrician', 'Electrician', 'Profesii', 'ro'],
+        ['Instalator', 'Instalator', 'Profesii', 'ro'],
+        ['Tâmplar', 'Tâmplar', 'Profesii', 'ro'],
+        ['Dulgher', 'Dulgher', 'Profesii', 'ro'],
+        ['Zidar', 'Zidar', 'Profesii', 'ro'],
+        ['Fierar', 'Fierar', 'Profesii', 'ro'],
+        ['Strungar', 'Strungar', 'Profesii', 'ro'],
+        ['Pilot', 'Pilot de aviație', 'Profesii', 'ro'],
+        ['Căpitan', 'Căpitan de navă', 'Profesii', 'ro'],
+        ['Ofițer', 'Ofițer', 'Profesii', 'ro'],
+        ['Marinar', 'Marinar', 'Profesii', 'ro'],
+        ['Artist', 'Artist plastic', 'Profesii', 'ro'],
+        ['Pictor', 'Pictor', 'Profesii', 'ro'],
+        ['Sculptor', 'Sculptor', 'Profesii', 'ro'],
+        ['Muzician', 'Muzician', 'Profesii', 'ro'],
+        ['Cântăreț', 'Cântăreț', 'Profesii', 'ro'],
+        ['Actor', 'Actor de teatru', 'Profesii', 'ro'],
+        ['Regizor', 'Regizor de film', 'Profesii', 'ro'],
+        ['Producător', 'Producător de film', 'Profesii', 'ro'],
+        ['Scriitor', 'Scriitor', 'Profesii', 'ro'],
+        ['Poet', 'Poet', 'Profesii', 'ro'],
+        ['Jurnalist', 'Jurnalist', 'Profesii', 'ro'],
+        ['Programator', 'Programator', 'Profesii', 'ro'],
+        ['Inginer software', 'Inginer', 'Profesii', 'ro'],
+        ['Inginer', 'Arhitect', 'Profesii', 'ro'],
+        ['Arhitect', 'Arhitect', 'Profesii', 'ro'],
+        ['Fermier', 'Fermier', 'Profesii', 'ro'],
+        ['Agronom', 'Agronom', 'Profesii', 'ro'],
+        ['Grădinar', 'Grădinar', 'Profesii', 'ro'],
+        ['Veterinar', 'Veterinar', 'Profesii', 'ro'],
+        ['Zootehnist', 'Zootehnist', 'Profesii', 'ro'],
+        ['Psiholog', 'Psiholog', 'Profesii', 'ro'],
+        ['Psihiatru', 'Psihiatru', 'Profesii', 'ro'],
+        ['Farmacist', 'Farmacist', 'Profesii', 'ro'],
+        ['Chimist', 'Chimist', 'Profesii', 'ro'],
+        ['Biolog', 'Biolog', 'Profesii', 'ro'],
+        ['Fizician', 'Fizician', 'Profesii', 'ro'],
+        ['Matematician', 'Matematician', 'Profesii', 'ro'],
+        ['Fizician', 'Fizician teoretician', 'Profesii', 'ro'],
+        ['Informatician', 'Informatician', 'Profesii', 'ro'],
+        ['Contabil', 'Contabil', 'Profesii', 'ro'],
+        ['Economist', 'Economist', 'Profesii', 'ro'],
+        ['Jurisconsult', 'Jurisconsult', 'Profesii', 'ro'],
+        ['Notar', 'Notar', 'Profesii', 'ro'],
+        ['Executor judecătoresc', 'Executor judecătoresc', 'Profesii', 'ro'],
+        ['Expert tehnic', 'Expert tehnic', 'Profesii', 'ro'],
+        ['Traducător', 'Interpret', 'Profesii', 'ro'],
+        ['Interpret', 'Traducător', 'Profesii', 'ro'],
+        ['Librar', 'Librar', 'Profesii', 'ro'],
+        ['Editor', 'Editor', 'Profesii', 'ro'],
+        ['Tipograf', 'Tipograf', 'Profesii', 'ro'],
+        ['Fotograf', 'Fotograf', 'Profesii', 'ro'],
+        ['Operator camera', 'Operator video', 'Profesii', 'ro'],
+        ['Operator video', 'Operator camera', 'Profesii', 'ro'],
+        ['Monteur video', 'Monteur audio', 'Profesii', 'ro'],
+        ['Monteur audio', 'Monteur video', 'Profesii', 'ro'],
+        ['Regizor de imagine', 'Director de fotografie', 'Profesii', 'ro'],
+        ['Director de fotografie', 'Regizor de imagine', 'Profesii', 'ro'],
+        ['Scenograf', 'Decorator', 'Profesii', 'ro'],
+        ['Decorator', 'Scenograf', 'Profesii', 'ro'],
+        ['Costumier', 'Costumier', 'Profesii', 'ro'],
+        ['Coafuzor', 'Coafuzor', 'Profesii', 'ro'],
+        ['Frizer', 'Frizer', 'Profesii', 'ro'],
+        ['Make-up artist', 'Stilist', 'Profesii', 'ro'],
+        ['Stilist', 'Make-up artist', 'Profesii', 'ro'],
+        ['Manichiuristă', 'Manichiuristă', 'Profesii', 'ro'],
+        ['Brutier', 'Brutier', 'Profesii', 'ro'],
+        ['Spălător', 'Spălător', 'Profesii', 'ro'],
+        ['Curățător', 'Curățător', 'Profesii', 'ro'],
+        ['Instalator sanitar', 'Instalator sanitar', 'Profesii', 'ro'],
+        ['Vopsitor', 'Vopsitor', 'Profesii', 'ro'],
+        ['Tencuitor', 'Tencuitor', 'Profesii', 'ro'],
+        ['Zidar finisator', 'Zidar finisator', 'Profesii', 'ro'],
+        ['Tâmplar de finisaj', 'Tâmplar', 'Profesii', 'ro'],
+        ['Dulgher finisor', 'Dulgher', 'Profesii', 'ro'],
+        ['Pietrar', 'Pietrar', 'Profesii', 'ro'],
+        ['Asamblor', 'Asamblor', 'Profesii', 'ro'],
+        ['Mecanic', 'Mecanic auto', 'Profesii', 'ro'],
+        ['Mecanic auto', 'Mecanic', 'Profesii', 'ro'],
+        ['Electrician auto', 'Electrician auto', 'Profesii', 'ro'],
+        ['Vopsitor auto', 'Vopsitor auto', 'Profesii', 'ro'],
+        ['Tâmplar auto', 'Tâmplar auto', 'Profesii', 'ro'],
+        ['Lăcuitor', 'Lăcuitor', 'Profesii', 'ro'],
+        ['Tapiter', 'Tapiter', 'Profesii', 'ro'],
+        ['Covorger', 'Covorger', 'Profesii', 'ro'],
+
+        // ROMANIAN - LOCURI
+        ['Casă', 'Locuință', 'Locuri', 'ro'],
+        ['Locuință', 'Apartament', 'Locuri', 'ro'],
+        ['Apartament', 'Garsonieră', 'Locuri', 'ro'],
+        ['Garsonieră', 'Casă', 'Locuri', 'ro'],
+        ['Școală', 'Grădiniță', 'Locuri', 'ro'],
+        ['Grădiniță', 'Școală primară', 'Locuri', 'ro'],
+        ['Școală primară', 'Gimnaziu', 'Locuri', 'ro'],
+        ['Gimnaziu', 'Liceu', 'Locuri', 'ro'],
+        ['Liceu', 'Colegiu', 'Locuri', 'ro'],
+        ['Colegiu', 'Facultate', 'Locuri', 'ro'],
+        ['Facultate', 'Universitate', 'Locuri', 'ro'],
+        ['Universitate', 'Școală doctorală', 'Locuri', 'ro'],
+        ['Școală doctorală', 'Casă', 'Locuri', 'ro'],
+        ['Spital', 'Clinică', 'Locuri', 'ro'],
+        ['Clinică', 'Spital', 'Locuri', 'ro'],
+        ['Sanatoriu', 'Sanatoriu', 'Locuri', 'ro'],
+        ['Farmacie', 'Drogărie', 'Locuri', 'ro'],
+        ['Drogărie', 'Farmacie', 'Locuri', 'ro'],
+        ['Policlinică', 'Centru de sănătate', 'Locuri', 'ro'],
+        ['Centru de sănătate', 'Policlinică', 'Locuri', 'ro'],
+        ['Laborator', 'Laborator de analize', 'Locuri', 'ro'],
+        ['Laborator de analize', 'Laborator', 'Locuri', 'ro'],
+        ['Restaurant', 'Restaurant', 'Locuri', 'ro'],
+        ['Cramponie', 'Cramponie', 'Locuri', 'ro'],
+        ['Bistro', 'Bistro', 'Locuri', 'ro'],
+        ['Cafenea', 'Cafenea', 'Locuri', 'ro'],
+        ['Burger', 'Burger', 'Locuri', 'ro'],
+        ['Pizzerie', 'Pizzerie', 'Locuri', 'ro'],
+        ['Săli de sport', 'Sală de forță', 'Locuri', 'ro'],
+        ['Sală de forță', 'Săli de sport', 'Locuri', 'ro'],
+        ['Hotel', 'Motel', 'Locuri', 'ro'],
+        ['Pensiune', 'Vilă', 'Locuri', 'ro'],
+        ['Vilă', 'Cabană', 'Locuri', 'ro'],
+        ['Cabană', 'Căsuță de munte', 'Locuri', 'ro'],
+        ['Căsuță de munte', 'Castel', 'Locuri', 'ro'],
+        ['Castel', 'Palat', 'Locuri', 'ro'],
+        ['Palat', 'Cetate', 'Locuri', 'ro'],
+        ['Cetate', 'Fortărea', 'Locuri', 'ro'],
+        ['Fortărea', 'Castel', 'Locuri', 'ro'],
+        ['Biserica', 'Mănăstire', 'Locuri', 'ro'],
+        ['Mănăstire', 'Moaște', 'Locuri', 'ro'],
+        ['Moaște', 'Biserica', 'Locuri', 'ro'],
+        ['Sinagogă', 'Sinagogă', 'Locuri', 'ro'],
+        ['Moschee', 'Moschee', 'Locuri', 'ro'],
+        ['Templuh', 'Templuh', 'Locuri', 'ro'],
+        ['Catedrală', 'Catedrală', 'Locuri', 'ro'],
+        ['Capelă', 'Capelă', 'Locuri', 'ro'],
+        ['Bancă', 'Seif', 'Locuri', 'ro'],
+        ['Seif', 'Casă de valori', 'Locuri', 'ro'],
+        ['Casă de valori', 'Banca', 'Locuri', 'ro'],
+        ['Poștă', 'G poștală', 'Locuri', 'ro'],
+        ['Căsuță poștală', 'Poștă', 'Locuri', 'ro'],
+        ['Oficiu poștal', 'Poștă', 'Locuri', 'ro'],
+        ['Bibliotecă', 'Librărie', 'Locuri', 'ro'],
+        ['Librărie', 'Bibliotecă', 'Locuri', 'ro'],
+        ['Muzeu', 'Galerie de artă', 'Locuri', 'ro'],
+        ['Galerie de artă', 'Muzeu', 'Locuri', 'ro'],
+        ['Teatru', 'Cinematograf', 'Locuri', 'ro'],
+        ['Cinematograf', 'Operă', 'Locuri', 'ro'],
+        ['Operă', 'Filharmonica', 'Locuri', 'ro'],
+        ['Filharmonica', 'Teatru', 'Locuri', 'ro'],
+        ['Circ', 'Circ', 'Locuri', 'ro'],
+        ['Parc de distracții', 'Parc de distracții', 'Locuri', 'ro'],
+        ['Stadion', 'Arenă', 'Locuri', 'ro'],
+        ['Arenă', 'Stadion', 'Locuri', 'ro'],
+        ['Sală de concerte', 'Sala polivalentă', 'Locuri', 'ro'],
+        ['Sala polivalentă', 'Sală de concerte', 'Locuri', 'ro'],
+        ['Parc', 'Grădină publică', 'Locuri', 'ro'],
+        ['Grădină publică', 'Parc', 'Locuri', 'ro'],
+        ['Grădină zoologică', 'Acvariu', 'Locuri', 'ro'],
+        ['Acvariu', 'Grădină zoologică', 'Locuri', 'ro'],
+        ['Seră', 'Seră', 'Locuri', 'ro'],
+        ['Aeroport', 'Terminal', 'Locuri', 'ro'],
+        ['Terminal', 'Aeroport', 'Locuri', 'ro'],
+        ['Gară', 'Stație de calea ferată', 'Locuri', 'ro'],
+        ['Stație de calea ferată', 'Gară', 'Locuri', 'ro'],
+        ['Autogară', 'Stația de autobuze', 'Locuri', 'ro'],
+        ['Stația de autobuze', 'Autogară', 'Locuri', 'ro'],
+        ['Metrou', 'Stație de metrou', 'Locuri', 'ro'],
+        ['Stație de metrou', 'Metrou', 'Locuri', 'ro'],
+        ['Piață', 'Târg', 'Locuri', 'ro'],
+        ['Târg', 'Piață', 'Locuri', 'ro'],
+        ['Bazar', 'Târg', 'Locuri', 'ro'],
+        ['Supermarket', 'Hypermarket', 'Locuri', 'ro'],
+        ['Hypermarket', 'Supermarket', 'Locuri', 'ro'],
+        ['Magazin', 'Depozit', 'Locuri', 'ro'],
+        ['Depozit', 'Magazin', 'Locuri', 'ro'],
+        ['Centru comercial', 'Mall', 'Locuri', 'ro'],
+        ['Mall', 'Centru comercial', 'Locuri', 'ro'],
+        ['Benzinărie', 'Pecă', 'Locuri', 'ro'],
+        ['Pecă', 'Benzinărie', 'Locuri', 'ro'],
+        ['Spălătorie', 'Spălătorie auto', 'Locuri', 'ro'],
+        ['Spălătorie auto', 'Spălătorie', 'Locuri', 'ro'],
+        ['Service auto', 'Service auto', 'Locuri', 'ro'],
+        ['Vulcanizare', 'Vulcanizare', 'Locuri', 'ro'],
+        ['Magazin de haine', 'Boutique', 'Locuri', 'ro'],
+        ['Boutique', 'Magazin de haine', 'Locuri', 'ro'],
+        ['Panificație', 'Cofetărie', 'Locuri', 'ro'],
+        ['Cofetărie', 'Panificație', 'Locuri', 'ro'],
+        ['Brutărie', 'Spălătorie', 'Locuri', 'ro'],
+        ['Spălătorie', 'Frizerie', 'Locuri', 'ro'],
+        ['Frizerie', 'Brutărie', 'Locuri', 'ro'],
+        ['Centru de afaceri', 'Centru de afaceri', 'Locuri', 'ro'],
+        ['Săli de conferințe', 'Săli de conferințe', 'Locuri', 'ro'],
+        ['Cazinou', 'Cazinou', 'Locuri', 'ro'],
+        ['Loc de joacă', 'Loc de joacă', 'Locuri', 'ro'],
     ];
 
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $wordMap = [];
+        $crewWordMap = [];
 
-        // Process paired words
-        foreach ($this->wordPairs as $crewWord => $impostorWord) {
-            $crew = Word::firstOrCreate(
-                ['word' => $crewWord],
-                [
-                    'category' => $this->categorizeWord($crewWord),
+        // Clear existing words to avoid duplicates with different languages
+        Word::query()->delete();
+
+        // Process word pairs
+        foreach ($this->wordPairs as $pair) {
+            [$crewWord, $impostorWord, $category, $language] = $pair;
+
+            // Check if we already created this crew word
+            $crewKey = "{$language}:{$crewWord}";
+            if (! isset($crewWordMap[$crewKey])) {
+                $crew = Word::create([
+                    'word' => $crewWord,
+                    'category' => $category,
                     'definition' => null,
                     'is_impostor_word' => false,
                     'difficulty' => rand(1, 3),
-                ]
-            );
+                    'language' => $language,
+                ]);
+                $crewWordMap[$crewKey] = $crew;
+            } else {
+                $crew = $crewWordMap[$crewKey];
+            }
 
-            $impostor = Word::firstOrCreate(
-                ['word' => $impostorWord],
-                [
-                    'category' => $this->categorizeWord($impostorWord),
-                    'definition' => null,
-                    'is_impostor_word' => true,
-                    'difficulty' => rand(1, 3),
-                ]
-            );
+            // Create impostor word
+            $impostor = Word::create([
+                'word' => $impostorWord,
+                'category' => $category,
+                'definition' => null,
+                'is_impostor_word' => true,
+                'difficulty' => rand(1, 3),
+                'language' => $language,
+            ]);
 
+            // Link crew word to impostor word
             $crew->update(['impostor_word_id' => $impostor->id]);
+
             $wordMap[$crewWord] = $crew;
             $wordMap[$impostorWord] = $impostor;
         }
 
-        $this->command->info('Seeded ' . count($wordMap) . ' word pairs.');
-    }
-
-    private function categorizeWord(string $word): string
-    {
-        $word = trim($word);
-        $romanianWords = ['Măr', 'Munte', 'Mămăligă', 'Sarmale', 'Branză', 'Pâine', 'Șuncă', 'Oțet', 'Cămașă', 'Iarbure', 'Slănină', 'Papucă', 'Gurdie', 'Mocan', 'Ibră', 'Furtună', 'Măgăr', 'Manșă', 'Ciorbă', 'Mici', 'Drob', 'Bec', 'Salată', 'Borș', 'Zacuscă', 'Oțet', 'Parință', 'Jachet', 'Papuci', 'Frate', 'Verighe', 'Sofrană', 'Țuică', 'Gutuie', 'Casă', 'Curte', 'Pădure', 'Fereastră', 'Prieten', 'Coleg', 'Profesor', 'Student', 'Doctor', 'Pacient', 'Portar', 'Vame', 'Fereastră', 'Nasă', 'Ureche', 'Gură', 'Mușchi', 'Sprâceană', 'Iarbure', 'Piatră', 'Pământ', 'Cer', 'Lumea'];
-        $balkanWords = ['Rakija', 'Burek', 'Kajmak', 'Ćevapi', 'Ajvar', 'Lepinja', 'Pljeskavica', 'Sarma', 'Musaka', 'Baklava', 'Lutenica', 'Pindjur', 'Gibanica', 'Žatobata', 'Palačinke', 'Bajadera', 'Kuvij', 'Vlahov'];
-        $europeanWords = ['Croissant', 'Brioche', 'Pizza', 'Calzone', 'Tapas', 'Pinchos', 'Sauerkraut', 'Choucroute', 'Goulash', 'Paprikáš', 'Pierogi', 'Uszka', 'Haggis', 'Plăcintă', 'Wiener', 'Schnitzel', 'Bagel', 'Lasagna', 'Cannelloni', 'Macaron', 'Gyros', 'Döner', 'Fondue', 'Raclette', 'Choucroute', 'Uszka', 'Raclette', 'Döner', 'Cannelloni', 'Pretzel', 'Schnitzel', 'Éclair', 'Creme', 'Calzone', 'Pinchos'];
-        $englishWords = ['Tea', 'Biscuit', 'Scone', 'Soccer', 'Rugby', 'Cricket', 'Baseball', 'Pub', 'Inn', 'Rain', 'Snow', 'Queue', 'Line', 'Lift', 'Hoist', 'Flat', 'Studio', 'Autumn', 'Crisps', 'Chips', 'Sofa', 'Settee', 'Boot', 'Bonnet', 'Hood', 'Trunk', 'Torch', 'Flashlight', 'Jumper', 'Cardigan', 'Lorry', 'Truck', 'Nappy', 'Diaper', 'Dustbin', 'Trainers', 'Postcode', 'Address', 'Mobile', 'Cell', 'Chemist', 'Pharmacy', 'Garden', 'Yard', 'Hoover', 'Eraser', 'Biscuit', 'Cookie', 'Couch', 'Truck', 'Diaper', 'Bonnet', 'Porch', 'Deck', 'Driveway', 'Pavement', 'Garage', 'Sunglasses', 'Spectacles', 'Earrings', 'Bracelet', 'Watch', 'Anklet', 'Stocking', 'Scarf', 'Gloves', 'Jacket', 'Coat', 'Trousers', 'Pants', 'Shorts', 'Skirt', 'Dress', 'Suit', 'Vest', 'Belt', 'Suspenders', 'Tie', 'Bowtie', 'Necktie', 'Wallet', 'Purse', 'Briefcase', 'Backpack', 'Suitcase', 'Luggage', 'Trunk', 'Coffin', 'Desk', 'Counter', 'Table', 'Shelf', 'Cupboard', 'Wardrobe', 'Drawer', 'Chest', 'Box', 'Crate', 'Bin', 'Basket', 'Hamper', 'Coffer', 'Safe', 'Vault'];
-
-        if (in_array($word, $romanianWords)) {
-            return 'Romanian';
-        }
-
-        if (in_array($word, $balkanWords)) {
-            return 'Balkan';
-        }
-
-        if (in_array($word, $europeanWords)) {
-            return 'European';
-        }
-
-        if (in_array($word, $englishWords)) {
-            return 'English';
-        }
-
-        return 'General';
+        $this->command->info('Seeded '.count($wordMap).' words ('.(count($wordMap) / 2).' pairs) across English and Romanian.');
     }
 }

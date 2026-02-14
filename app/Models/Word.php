@@ -17,6 +17,7 @@ class Word extends Model
         'impostor_word_id',
         'is_impostor_word',
         'difficulty',
+        'language',
     ];
 
     /**

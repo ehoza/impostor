@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { Users, Plus, LogIn, User, Building2, Sparkles, ShieldAlert, ArrowRight, Copy, Gamepad2 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 const createForm = useForm({
     player_name: '',
@@ -12,6 +12,10 @@ const joinForm = useForm({
     player_name: '',
     code: '',
 });
+
+/** Server can return validation errors for keys not in the form type. */
+const createFormErrors = computed(() => createForm.errors as Record<string, string>);
+const joinFormErrors = computed(() => joinForm.errors as Record<string, string>);
 
 const activeTab = ref<'create' | 'join'>('create');
 </script>
@@ -257,16 +261,16 @@ const activeTab = ref<'create' | 'join'>('create');
 
             <!-- Errors -->
             <div
-                v-if="createForm.errors.player_name || createForm.errors.code || joinForm.errors.player_name || joinForm.errors.code"
+                v-if="createForm.errors.player_name || createFormErrors.code || joinForm.errors.player_name || joinFormErrors.code"
                 class="glass animate-bounce-in mt-4 rounded-xl border border-red-500/30 bg-red-900/20 p-3 sm:mt-5 sm:rounded-2xl sm:p-4"
             >
                 <div class="flex items-start gap-2 sm:gap-3">
                     <ShieldAlert class="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400 sm:h-5 sm:w-5" />
                     <div class="space-y-0.5 sm:space-y-1">
                         <p v-if="createForm.errors.player_name" class="text-xs text-red-300 sm:text-sm">{{ createForm.errors.player_name }}</p>
-                        <p v-if="createForm.errors.code" class="text-xs text-red-300 sm:text-sm">{{ createForm.errors.code }}</p>
+                        <p v-if="createFormErrors.code" class="text-xs text-red-300 sm:text-sm">{{ createFormErrors.code }}</p>
                         <p v-if="joinForm.errors.player_name" class="text-xs text-red-300 sm:text-sm">{{ joinForm.errors.player_name }}</p>
-                        <p v-if="joinForm.errors.code" class="text-xs text-red-300 sm:text-sm">{{ joinForm.errors.code }}</p>
+                        <p v-if="joinFormErrors.code" class="text-xs text-red-300 sm:text-sm">{{ joinFormErrors.code }}</p>
                     </div>
                 </div>
             </div>

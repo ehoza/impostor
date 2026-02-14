@@ -13,6 +13,8 @@ const props = defineProps<{
     voteData: VoteData;
     type: 'vote-now' | 'reroll';
     disabled?: boolean;
+    /** When disabled, show this instead of generic "Eliminated" (e.g. "Impostors can't reroll"). */
+    disabledLabel?: string;
 }>();
 
 const emit = defineEmits<{
@@ -96,7 +98,7 @@ const isVoteNow = computed(() => props.type === 'vote-now');
 
             <span v-if="isActivated">Activated!</span>
             <span v-else-if="voteData.has_voted">Voted</span>
-            <span v-else-if="disabled">Eliminated</span>
+            <span v-else-if="disabled">{{ disabledLabel ?? 'Eliminated' }}</span>
             <span v-else>{{ isVoteNow ? 'Vote Now' : 'Reroll' }}</span>
         </button>
 
